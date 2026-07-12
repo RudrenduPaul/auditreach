@@ -140,9 +140,7 @@ describe("RedditClient", () => {
       .mockResolvedValueOnce(jsonResponse({ error: "bad request" }, false, 400));
 
     const client = new RedditClient(credentials);
-    await expect(
-      client.search({ query: "test", subreddit: "r/MachineLearning" }),
-    ).rejects.toThrow(
+    await expect(client.search({ query: "test", subreddit: "r/MachineLearning" })).rejects.toThrow(
       /Reddit search request failed: 400.*leading "r\/" or "\/r\/" prefix.*try "MachineLearning" instead/,
     );
   });
@@ -160,9 +158,9 @@ describe("RedditClient", () => {
       .mockResolvedValueOnce(jsonResponse({ error: "bad request" }, false, 400));
 
     const client = new RedditClient(credentials);
-    await expect(
-      client.search({ query: "test", subreddit: "/r/MachineLearning" }),
-    ).rejects.toThrow(/try "MachineLearning" instead/);
+    await expect(client.search({ query: "test", subreddit: "/r/MachineLearning" })).rejects.toThrow(
+      /try "MachineLearning" instead/,
+    );
   });
 
   it("falls back to a generic message for a 400 with no leading r/ prefix on --subreddit", async () => {
@@ -178,9 +176,9 @@ describe("RedditClient", () => {
       .mockResolvedValueOnce(jsonResponse({ error: "bad request" }, false, 400));
 
     const client = new RedditClient(credentials);
-    await expect(
-      client.search({ query: "test", subreddit: "MachineLearning" }),
-    ).rejects.toThrow("Reddit search request failed: 400 Error.");
+    await expect(client.search({ query: "test", subreddit: "MachineLearning" })).rejects.toThrow(
+      "Reddit search request failed: 400 Error.",
+    );
   });
 
   it("falls back to a generic message for a 400 with no --subreddit at all", async () => {

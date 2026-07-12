@@ -180,7 +180,9 @@ describe("runAuthCommand", () => {
 
     it("reports a clear failure message for invalid YouTube credentials", async () => {
       getYoutubeCredentialsMock.mockReturnValue({ apiKey: "bad-key" });
-      youtubeVerifyMock.mockRejectedValue(new Error("API key not valid. Please pass a valid API key."));
+      youtubeVerifyMock.mockRejectedValue(
+        new Error("API key not valid. Please pass a valid API key."),
+      );
       const errorSpy = vi.spyOn(console, "error");
 
       await runAuthCommand({ platform: "youtube", verify: true });
