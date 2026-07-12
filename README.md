@@ -1,16 +1,59 @@
+<div align="center">
+
 # auditreach
 
 Research Reddit and YouTube from your AI agent using only official APIs, your own keys, and a log that proves exactly what you queried and why it was allowed.
 
-    npx auditreach-cli search --platform reddit --query "agent skill security"
+[![CI](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml/badge.svg)](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/github/license/RudrenduPaul/auditreach)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
 
----
+</div>
+
+<!-- TODO: record a real terminal demo (asciinema or a short GIF) and embed it here.
+     Capture script: run the two commands under "What it does" below against a real
+     Reddit search-app credential, in a clean terminal, ~15-20s total. Save as
+     docs/demo.gif and replace this comment with:
+     ![auditreach demo: running a Reddit search and verifying the audit log](docs/demo.gif) -->
+
+## Install
+
+There's no published npm package yet -- clone and build directly, verified working end to end:
+
+```sh
+git clone https://github.com/RudrenduPaul/auditreach.git
+cd auditreach
+npm install
+npm run build
+node dist/cli.js search --platform reddit --query "your query"
+```
+
+## Table of contents
+
+- [Why auditreach exists](#why-auditreach-exists)
+- [How it compares](#how-it-compares)
+- [What it does](#what-it-does)
+- [Getting started](#getting-started)
+- [Platform coverage](#platform-coverage)
+- [Result limits](#result-limits)
+- [What is a "consent basis," honestly](#what-is-a-consent-basis-honestly)
+- [FAQ](#faq)
+- [Self-hosting / local-only by default](#self-hosting--local-only-by-default)
+- [Development](#development)
+- [Security](#security)
+- [Success stories](#success-stories)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Why auditreach exists
 
 A consultancy we talked to had an AI research agent pulling social sentiment for a client report. It worked well until the client's legal team asked, in writing, what authority the data collection was under. The honest answer was "a browser cookie session," because the tool they were using authenticates by importing a logged-in session and scraping as if it were a real user. That works. It is also not an answer you can put in a compliance memo, and it is the exact pattern Reddit sued Anthropic and SerpApi over in 2025, and the same pattern that got Pushshift's public API access shut down by Reddit back in 2024.
 
 [Agent-Reach](https://github.com/Panniantong/Agent-Reach) is not a bad tool. It has real traction (55k+ stars) because cookie-based scraping genuinely covers more ground than any official API does today, at zero API cost. But "covers more ground" and "an agency's client can pass a compliance review" are two different bars, and nothing was built specifically to clear the second one.
 
 auditreach is the CLI we wished existed instead. It talks to Reddit and YouTube only through their official, documented APIs, using your own API keys -- never a shared pool -- and every single query writes a hash-chained entry to a local audit log: which platform, which endpoint, which scope, and a plain-language line explaining the consent/ToS basis for that specific call. No cookie import. No session-token reuse. No code path that could even pretend to be a logged-in human.
+
+We are not trying to out-cover Agent-Reach's six platforms. auditreach is narrower on purpose, for the buyer who structurally can't use a cookie-based tool at all.
 
 ## How it compares
 
@@ -27,11 +70,9 @@ Numbers measured directly against each repo's public GitHub metadata and, for th
 
 We started building auditreach's Reddit client on top of `snoowrap`, the most-used Reddit API wrapper in the Node ecosystem. Installing it pulled in `request`, `request-promise`, `form-data`, and `har-validator` -- a dependency chain with **4 CRITICAL** and multiple HIGH severity advisories, none of which snoowrap can fix because the project has been archived since 2023. We rewrote the Reddit client as a direct `fetch`-based OAuth2 client against Reddit's own documented REST endpoints instead: same functionality, zero of those CVEs, zero extra runtime dependencies. `npm audit --audit-level=high` on this repo returns clean.
 
-We are not trying to out-cover Agent-Reach's six platforms. auditreach is narrower on purpose, for the buyer who structurally can't use a cookie-based tool at all.
-
 ## What it does
 
-    npx auditreach-cli search --platform reddit --query "agent memory poisoning" --subreddit MachineLearning
+    node dist/cli.js search --platform reddit --query "agent memory poisoning" --subreddit MachineLearning
 
     AuditReach v0.1 -- Official-API Research CLI
     Platform: Reddit  |  Auth: OAuth script-app grant, read-only, public-subreddit scope
@@ -52,40 +93,40 @@ We are not trying to out-cover Agent-Reach's six platforms. auditreach is narrow
 
 Every entry in `auditreach.log.jsonl` is hash-chained -- each entry's hash is computed from its own content, and the next entry references it. Editing, deleting, or reordering an entry breaks the chain:
 
-    $ auditreach verify-log
+    $ node dist/cli.js verify-log
     Verifying ./auditreach.log.jsonl...
     ✓ Chain intact: 14 entries, no gaps, no tampering detected.
 
     # after someone hand-edits a line in the log file:
-    $ auditreach verify-log
+    $ node dist/cli.js verify-log
     Verifying ./auditreach.log.jsonl...
     ✗ Chain broken at entry 3 (ar_2026-07-12_9f3c2a): entry ar_2026-07-12_9f3c2a hash does not
       match its own content -- entry was edited after being written
 
-Both outputs above are real runs against the compiled CLI, not mocked -- see `docs/security-review-2026-07-12.md` for how the tamper-detection path was verified.
+See `docs/security-review-2026-07-12.md` for how the tamper-detection path was verified.
 
 ## Getting started
 
-**1. Install:**
-
-    npm install -g auditreach-cli
+**1. Install:** see [Install](#install) above -- clone and build, `npm install -g` isn't available yet.
 
 **2. Set up credentials for the platform you want to search (BYO-key -- your own, never ours):**
 
-    auditreach auth --platform reddit
+    node dist/cli.js auth --platform reddit
     # Prompts for Client ID, Client secret, username, password.
     # Create a script-app at https://www.reddit.com/prefs/apps first.
 
-    auditreach auth --platform youtube
+    node dist/cli.js auth --platform youtube
     # Prompts for an API key.
     # Create one at https://console.cloud.google.com/apis/credentials
 
-All credentials are stored in your OS keychain (`@napi-rs/keyring`), never in a config file, never transmitted anywhere except the platform's own official auth endpoint.
+All credentials are stored in your OS keychain (`@napi-rs/keyring`), never in a config file, never transmitted anywhere except the platform's own official auth endpoint. Once credentials are set, verify them without running a real search:
+
+    node dist/cli.js auth --platform reddit --verify
 
 **3. Search:**
 
-    auditreach search --platform reddit --query "your query" --subreddit some_subreddit
-    auditreach search --platform youtube --query "your query" --channel @SomeChannel
+    node dist/cli.js search --platform reddit --query "your query" --subreddit some_subreddit
+    node dist/cli.js search --platform youtube --query "your query" --channel @SomeChannel
 
 Honest note on setup time: getting your own API credentials from Reddit and Google takes a few minutes the first time -- this is slower than Agent-Reach's cookie-import flow (which just reuses a browser session you already have) by design. BYOK means the setup cost is real, not hidden.
 
@@ -106,15 +147,35 @@ Honest note on setup time: getting your own API credentials from Reddit and Goog
 | Reddit   | 25                     | 100                       |
 | YouTube  | 25                     | 50                        |
 
-Values above the cap are silently clamped to it -- there is currently no way to page past a platform's per-request maximum in a single `search` call. Whenever the number of items returned equals the limit that was actually applied, whether that is the silent default or an explicit `--max-results` value, auditreach prints a warning to stderr telling you more results may exist and how to raise `--max-results` (up to the platform cap).
+Values above the cap are silently clamped to it. For Reddit, `--before`/`--after` let you page past a single call's results using the real cursor Reddit's own response returns (see [Success stories](#success-stories)); YouTube has no equivalent yet. Whenever the number of items returned equals the limit that was actually applied, whether that is the silent default or an explicit `--max-results` value, auditreach prints a warning to stderr telling you more results may exist and how to raise `--max-results` (up to the platform cap).
 
 ## What is a "consent basis," honestly
 
 The `consent_basis` field on every audit-log entry names the specific platform API terms and auth mechanism used for that query. It certifies that the request went through the platform's official, documented API surface under the credentials you supplied. **It does not certify that your specific use case is legally sufficient for your jurisdiction or contract** -- that determination is yours to make, informed by an accurate, complete, tamper-evident record of what actually happened.
 
+## FAQ
+
+**Does auditreach store my Reddit or YouTube credentials anywhere?**
+No. Credentials go straight into your OS keychain through `@napi-rs/keyring` (`src/auth/credential-store.ts`). There is no config file, no environment variable, and no code path that writes a raw credential to disk.
+
+**How many results does a search return by default, and can I get more?**
+25, silently, unless you pass `--max-results` -- see [Result limits](#result-limits). The hard cap is 100 for Reddit and 50 for YouTube. A stderr warning fires whenever a search actually hits the applied limit, whether that's the silent default or an explicit value you passed.
+
+**Can I page past Reddit's result cap?**
+Yes, for Reddit: `search()` reads the real `after`/`before` cursor out of Reddit's own response and exposes `--before`/`--after` flags to page in either direction. See the [praw#614 success story](#success-stories) for why this exists.
+
+**Does auditreach support X (Twitter)?**
+Not yet. X API v2's pricing and post-volume caps have been prohibitive for small teams doing real research since the 2023 changes. See [Platform coverage](#platform-coverage) for the full reasoning.
+
+**How do I check my credentials are still valid without running a real search?**
+`node dist/cli.js auth --platform reddit --verify` (or `--platform youtube`). It performs the minimal authenticated check and reports pass or fail, with no `--query` needed, no results file written, and no audit-log entry appended.
+
+**Is the audit log actually tamper-evident, or just a log file?**
+Tamper-evident: each entry's hash is computed from its own content and the next entry references it, so `verify-log` can point to the exact entry a hand-edit broke. See the demo under [What it does](#what-it-does).
+
 ## Self-hosting / local-only by default
 
-Nothing about auditreach requires a hosted account or server. Every command runs entirely on your machine; the audit log is a plain file you own.
+Nothing about auditreach requires a hosted account or server. Every command runs entirely on your machine; the audit log is a plain file you own. This is the same flow as [Install](#install) above:
 
     git clone https://github.com/RudrenduPaul/auditreach.git
     cd auditreach
@@ -134,13 +195,9 @@ See `CONTRIBUTING.md` for the rules on adding a new platform client -- the short
 
 ## Security
 
-See `SECURITY.md` for the vulnerability disclosure policy and `docs/security-review-2026-07-12.md` for the pre-launch OWASP/STRIDE review (zero CRITICAL/HIGH findings; one moderate, non-directly-reachable supply-chain advisory tracked via Dependabot).
+See `SECURITY.md` for the vulnerability disclosure policy and `docs/security-review-2026-07-12.md` for the pre-launch OWASP/STRIDE review (zero CRITICAL/HIGH findings; one moderate, non-directly-reachable supply-chain advisory that has since been resolved -- `npm audit` on this repo currently returns zero vulnerabilities). GitHub secret scanning and push protection are enabled on this repo.
 
-## License
-
-Apache 2.0. See `LICENSE`.
-
-## Success Stories
+## Success stories
 
 Four real issues reported against `praw-dev/praw` -- PRAW, Reddit's official Python API
 wrapper, and the closest thing this project has to prior art -- root-caused against
@@ -166,3 +223,11 @@ single outside user. Each line below is tied to the actual report that prompted 
   class's docstring; PRAW's own maintainer admitted he "wasn't sure the best way to make
   this clear." `--help` and this README now state the real default and per-platform
   caps, and a runtime warning fires whenever a search actually got truncated.
+
+## Contributing
+
+See `CONTRIBUTING.md` for the rules on adding a new platform client. Short version: official API only, honest rate-limit disclosure, tests that mock the network boundary, never a code path that reads or writes a raw credential outside `src/auth/credential-store.ts`.
+
+## License
+
+Apache 2.0. See `LICENSE`.
