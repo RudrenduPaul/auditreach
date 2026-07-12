@@ -1,6 +1,6 @@
-# Branch protection (ready to apply, not yet applied)
+# Branch protection (applied 2026-07-12)
 
-Not applied automatically -- this repo is early enough that fast solo commits to `main` are still useful. Apply once collaborators or external PRs start landing.
+Applied via the `gh api` command below when the repo went public. `enforce_admins: false` means the repo owner can still push directly to `main` for fast solo commits -- collaborators and external PRs go through the required PR + status check + 1 approval flow.
 
 ## Apply via `gh api`
 
