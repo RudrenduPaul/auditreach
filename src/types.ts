@@ -47,6 +47,10 @@ export interface RedditSearchOptions {
   query: string;
   subreddit?: string;
   limit?: number;
+  /** Reddit fullname (e.g. "t3_abc123") to page results before, for paginating past the ~1000-result search cap. */
+  before?: string;
+  /** Reddit fullname (e.g. "t3_abc123") to page results after, for paginating past the ~1000-result search cap. */
+  after?: string;
 }
 
 export interface YoutubeSearchOptions {

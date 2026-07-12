@@ -168,4 +168,52 @@ describe("RedditClient", () => {
     // 1 token request + 2 search requests = 3 total, not 4.
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
+
+  it("passes before/after cursor params through to the search request when supplied", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          access_token: "tok_page",
+          token_type: "bearer",
+          expires_in: 3600,
+          scope: "*",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ data: { children: [] } }));
+
+    const client = new RedditClient(credentials);
+    const outcome = await client.search({
+      query: "test",
+      after: "t3_abc123",
+      before: "t3_def456",
+    });
+
+    const searchCall = fetchMock.mock.calls[1] as [string, RequestInit];
+    const requestUrl = new URL(searchCall[0]);
+    expect(requestUrl.searchParams.get("after")).toBe("t3_abc123");
+    expect(requestUrl.searchParams.get("before")).toBe("t3_def456");
+    expect(outcome.queryParams.after).toBe("t3_abc123");
+    expect(outcome.queryParams.before).toBe("t3_def456");
+  });
+
+  it("omits before/after params entirely when not supplied", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          access_token: "tok_nopage",
+          token_type: "bearer",
+          expires_in: 3600,
+          scope: "*",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ data: { children: [] } }));
+
+    const client = new RedditClient(credentials);
+    await client.search({ query: "test" });
+
+    const searchCall = fetchMock.mock.calls[1] as [string, RequestInit];
+    const requestUrl = new URL(searchCall[0]);
+    expect(requestUrl.searchParams.has("after")).toBe(false);
+    expect(requestUrl.searchParams.has("before")).toBe(false);
+  });
 });

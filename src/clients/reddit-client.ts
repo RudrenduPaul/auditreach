@@ -95,6 +95,17 @@ export class RedditClient {
     if (options.subreddit) {
       params.set("restrict_sr", "1");
     }
+    // Reddit's search listing endpoint accepts standard Listing pagination
+    // cursors (before/after, Reddit "fullname" ids e.g. "t3_abc123"). These
+    // let a caller page past the ~1000-result search cap by walking the
+    // listing forward/backward from a known item instead of relying on
+    // offset-based paging, which Reddit's search API does not support.
+    if (options.before) {
+      params.set("before", options.before);
+    }
+    if (options.after) {
+      params.set("after", options.after);
+    }
 
     const path = options.subreddit
       ? `/r/${encodeURIComponent(options.subreddit)}/search`
@@ -133,6 +144,8 @@ export class RedditClient {
         query: options.query,
         subreddit: options.subreddit,
         limit,
+        before: options.before,
+        after: options.after,
       },
       authScope: "OAuth script-app grant, read-only, public-subreddit scope",
       consentBasis:
