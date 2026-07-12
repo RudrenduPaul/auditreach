@@ -46,6 +46,8 @@ node dist/cli.js search --platform reddit --query "your query"
 - [How it compares](#how-it-compares)
 - [What it does](#what-it-does)
 - [Getting started](#getting-started)
+- [Commands](#commands)
+- [Library API reference](#library-api-reference)
 - [Platform coverage](#platform-coverage)
 - [Result limits](#result-limits)
 - [What is a "consent basis," honestly](#what-is-a-consent-basis-honestly)
@@ -141,6 +143,117 @@ All credentials are stored in your OS keychain (`@napi-rs/keyring`), never in a 
     node dist/cli.js search --platform youtube --query "your query" --channel @SomeChannel
 
 Honest note on setup time: getting your own API credentials from Reddit and Google takes a few minutes the first time -- this is slower than Agent-Reach's cookie-import flow (which just reuses a browser session you already have) by design. BYOK means the setup cost is real, not hidden.
+
+## Commands
+
+`auditreach` has three subcommands. Every flag below is pulled directly from the CLI's own `--help` output, not from memory of what it used to support.
+
+### `auditreach search`
+
+Search a platform using its official API only.
+
+| Flag                      | Description                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| `--platform <platform>`   | `reddit` \| `youtube` (required)                                                |
+| `--query <query>`         | search query (required)                                                         |
+| `--subreddit <subreddit>` | restrict search to one subreddit (Reddit only)                                  |
+| `--channel <handle>`      | restrict search to one channel, e.g. `@AnthropicAI` (YouTube only)              |
+| `--since <date>`          | only results published after this date, e.g. `2026-06-01` (YouTube only)        |
+| `--max-results <n>`       | maximum results to return (default: 25; platform caps: 100 Reddit / 50 YouTube) |
+| `--before <fullname>`     | page results before this Reddit fullname cursor, e.g. `t3_abc123` (Reddit only) |
+| `--after <fullname>`      | page results after this Reddit fullname cursor, e.g. `t3_abc123` (Reddit only)  |
+| `--output <path>`         | write full results JSON to this path                                            |
+
+    node dist/cli.js search --platform reddit --query "agent memory poisoning" --subreddit MachineLearning --max-results 50
+
+### `auditreach auth`
+
+Set up, verify, or clear BYOK credentials for a platform (stored in your OS keychain).
+
+| Flag                    | Description                                                                                        |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `--platform <platform>` | `reddit` \| `youtube` (required)                                                                   |
+| `--clear`               | delete stored credentials for this platform                                                        |
+| `--verify`              | verify stored credentials are valid without running a search (no results file, no audit-log entry) |
+
+    node dist/cli.js auth --platform reddit --verify
+
+### `auditreach verify-log`
+
+Verify the local hash-chained audit log has not been tampered with.
+
+| Flag            | Description                                                                  |
+| --------------- | ---------------------------------------------------------------------------- |
+| `--path <path>` | path to the audit log file (defaults to `./auditreach.log.jsonl` if omitted) |
+
+    node dist/cli.js verify-log --path ./auditreach.log.jsonl
+
+Run `auditreach <command> --help` any time to see the exact flags your installed version supports.
+
+## Library API reference
+
+`auditreach-cli` is also importable as a library, not just a CLI. Every export below comes straight from `dist/index.d.ts` in the published package.
+
+```ts
+import {
+  RedditClient,
+  YoutubeClient,
+  getCredential,
+  setCredential,
+  deleteCredential,
+  getRedditCredentials,
+  getYoutubeCredentials,
+  appendAuditLogEntry,
+  getLastEntryHash,
+  computeEntryHash,
+  verifyAuditLogChain,
+  credentialFingerprint,
+  canonicalJson,
+  sha256Hex,
+  DEFAULT_AUDIT_LOG_PATH,
+} from "auditreach-cli";
+```
+
+**Clients**
+
+- `new RedditClient(credentials: RedditCredentials)` -- talks to Reddit's official OAuth API only, using the password grant ("script app" flow). `.search(options: RedditSearchOptions): Promise<SearchOutcome>`, `.verifyCredentials(): Promise<void>`.
+- `new YoutubeClient(credentials: YoutubeCredentials)` -- wraps the official YouTube Data API v3. `.search(options: YoutubeSearchOptions): Promise<SearchOutcome>`, `.verifyCredentials(): Promise<void>` (a 1-quota-unit call, no query needed).
+
+```ts
+const credentials = getRedditCredentials();
+if (!credentials) throw new Error("run `auditreach auth --platform reddit` first");
+
+const client = new RedditClient(credentials);
+const outcome = await client.search({
+  query: "agent memory poisoning",
+  subreddit: "MachineLearning",
+});
+```
+
+**Credentials** (`setCredential` / `getCredential` / `deleteCredential` / `getRedditCredentials` / `getYoutubeCredentials`) -- all credential I/O goes through this module. It's the one place allowed to touch a raw secret; values come back only to hand directly to a client's constructor, never to log or print.
+
+**Audit log**
+
+- `appendAuditLogEntry(entryWithoutHash: UnhashedAuditLogEntry, logPath?: string): Promise<AuditLogEntry>` -- the only write path into the log; entries are never edited or deleted in place.
+- `getLastEntryHash(logPath?: string): Promise<string | null>`
+- `computeEntryHash(entry: UnhashedAuditLogEntry): string`
+- `verifyAuditLogChain(logPath?: string): Promise<ChainVerificationResult>` -- re-derives every entry's hash and checks the chain end to end.
+- `DEFAULT_AUDIT_LOG_PATH` -- `"./auditreach.log.jsonl"`
+
+```ts
+const result = await verifyAuditLogChain();
+if (!result.valid) {
+  console.error(`Chain broken at entry ${result.brokenAtIndex}: ${result.reason}`);
+}
+```
+
+**Crypto utilities**
+
+- `canonicalJson(value: unknown): string` -- recursively sorts object keys so the same logical entry always serializes to the same bytes, which the hash chain depends on to verify deterministically.
+- `sha256Hex(input: string): string`
+- `credentialFingerprint(secret: string): string` -- keeps only the last 6 hex characters of the hash, enough to distinguish rotated keys in a local audit log, never enough to be a partial credential leak.
+
+No generated API docs site exists yet (no TypeDoc build wired into CI) -- the exports above are the complete public surface. Check `dist/index.d.ts` in the published package for exact types.
 
 ## Platform coverage
 

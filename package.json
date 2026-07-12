@@ -1,7 +1,7 @@
 {
   "name": "auditreach-cli",
-  "version": "0.1.0",
-  "description": "Official-API-only, BYOK research CLI with a hash-chained compliance audit log -- for AI agents that can't legally use cookie-based scraping",
+  "version": "0.1.1",
+  "description": "Official-API-only, BYOK CLI for researching Reddit and YouTube with your own API keys and a tamper-evident, hash-chained audit log -- built for AI agents and compliance teams that can't rely on cookie-based scraping or shared credential pools.",
   "type": "module",
   "bin": {
     "auditreach": "./dist/cli.js"
@@ -32,14 +32,23 @@
     "audit-log",
     "reddit-api",
     "youtube-api",
-    "ai-agent",
-    "research"
+    "ai-agents",
+    "research",
+    "oauth2",
+    "typescript",
+    "developer-tools",
+    "security",
+    "api-client"
   ],
   "author": "Rudrendu Paul",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/RudrenduPaul/auditreach.git"
+  },
+  "homepage": "https://github.com/RudrenduPaul/auditreach#readme",
+  "bugs": {
+    "url": "https://github.com/RudrenduPaul/auditreach/issues"
   },
   "dependencies": {
     "@napi-rs/keyring": "^1.3.0",
