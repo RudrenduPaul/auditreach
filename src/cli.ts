@@ -59,9 +59,13 @@ program
   .description("Set up or clear BYOK credentials for a platform (stored in your OS keychain)")
   .requiredOption("--platform <platform>", "reddit | youtube")
   .option("--clear", "delete stored credentials for this platform")
+  .option(
+    "--verify",
+    "verify stored credentials are valid without running a search (no results file, no audit-log entry)",
+  )
   .action(async (opts) => {
     assertPlatform(opts.platform);
-    await runAuthCommand({ platform: opts.platform, clear: opts.clear });
+    await runAuthCommand({ platform: opts.platform, clear: opts.clear, verify: opts.verify });
   });
 
 program

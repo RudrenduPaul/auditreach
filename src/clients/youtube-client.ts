@@ -12,6 +12,15 @@ export class YoutubeClient {
     this.youtube = google.youtube({ version: "v3", auth: credentials.apiKey });
   }
 
+  /**
+   * Issues a minimal authenticated request (1 quota unit, no query needed)
+   * to confirm the API key is valid. Used by `auditreach auth --verify`
+   * instead of running a real search.
+   */
+  async verifyCredentials(): Promise<void> {
+    await this.youtube.videoCategories.list({ part: ["snippet"], regionCode: "US" });
+  }
+
   async search(options: YoutubeSearchOptions): Promise<SearchOutcome> {
     if (!options.query && !options.channelHandle) {
       throw new Error("YouTube search requires either --query or --channel");
