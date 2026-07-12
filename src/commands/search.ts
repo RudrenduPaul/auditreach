@@ -16,6 +16,8 @@ export interface SearchCommandArgs {
   channel?: string;
   since?: string;
   maxResults?: number;
+  before?: string;
+  after?: string;
   output?: string;
 }
 
@@ -40,6 +42,8 @@ export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
       query: args.query,
       subreddit: args.subreddit,
       limit: args.maxResults,
+      before: args.before,
+      after: args.after,
     });
     fingerprintSource = credentials.clientSecret;
   } else {
@@ -104,6 +108,12 @@ function printResults(outcome: SearchOutcome): void {
   });
   if (outcome.items.length > 10) {
     console.log(`... and ${outcome.items.length - 10} more (see output file)`);
+  }
+  if (outcome.nextCursor?.after) {
+    console.log(`\nNext page: rerun with --after ${outcome.nextCursor.after}`);
+  }
+  if (outcome.nextCursor?.before) {
+    console.log(`Previous page: rerun with --before ${outcome.nextCursor.before}`);
   }
   warnIfTruncated(outcome);
 }
