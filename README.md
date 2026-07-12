@@ -128,7 +128,7 @@ Nothing about auditreach requires a hosted account or server. Every command runs
     npm run lint          # ESLint
     npm run format        # Prettier check
     npm run typecheck     # tsc --noEmit --strict
-    npm run test:coverage # vitest, 49 tests, 96.68% statement coverage
+    npm run test:coverage # vitest, 66 tests, 95.4% statement coverage
 
 See `CONTRIBUTING.md` for the rules on adding a new platform client -- the short version: official API only, honest rate-limit disclosure, tests that mock the network boundary, never anything that reads or writes a raw credential outside `src/auth/credential-store.ts`.
 
@@ -139,3 +139,30 @@ See `SECURITY.md` for the vulnerability disclosure policy and `docs/security-rev
 ## License
 
 Apache 2.0. See `LICENSE`.
+
+## Success Stories
+
+Four real issues reported against `praw-dev/praw` -- PRAW, Reddit's official Python API
+wrapper, and the closest thing this project has to prior art -- root-caused against
+auditreach's own source and used to close genuine gaps in this tool before it had a
+single outside user. Each line below is tied to the actual report that prompted it.
+
+- **[praw#614](https://github.com/praw-dev/praw/issues/614)** (@mananwason) -- asked how
+  to read the before/after pagination cursor off Reddit's search response to page past
+  its ~1,000-result cap; PRAW itself never solved this. `search()` now extracts the real
+  cursor from Reddit's response and returns it as `SearchOutcome.nextCursor`, plus
+  `--before`/`--after` flags to page in either direction.
+- **[praw#1939](https://github.com/praw-dev/praw/issues/1939)** (@Auditormadness9) -- hit
+  an undiagnosed 400 error caused by a subreddit name that still carried a leading `r/`
+  prefix. Search errors now name that specific cause when it's the likely culprit:
+  previously the CLI just returned a bare status code and left the guessing to you.
+- **[praw#984](https://github.com/praw-dev/praw/issues/984)** (@MaxMatti) -- asked for a
+  simple way to check whether Reddit bot credentials were still valid, without PRAW's
+  confusing `getMe()`-recursion workaround. `auditreach auth --platform reddit --verify`
+  does exactly that now: one lightweight check, no search required, nothing written to
+  disk.
+- **[praw#119](https://github.com/praw-dev/praw/issues/119)** (@nsp) -- hit PRAW's
+  historic silent 25-result default, discoverable only by reading an unrelated base
+  class's docstring; PRAW's own maintainer admitted he "wasn't sure the best way to make
+  this clear." `--help` and this README now state the real default and per-platform
+  caps, and a runtime warning fires whenever a search actually got truncated.
