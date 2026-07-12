@@ -7,6 +7,13 @@ const MAX_LIMIT = 100;
 const TOKEN_URL = "https://www.reddit.com/api/v1/access_token";
 const API_BASE = "https://oauth.reddit.com";
 
+// Matches a subreddit value that still carries a leading "r/" or "/r/"
+// prefix, e.g. "r/MachineLearning" or "/r/MachineLearning" instead of the
+// bare "MachineLearning" the Reddit search API expects. This is the most
+// common cause of an otherwise-undiagnosed 400 on the search endpoint (see
+// https://github.com/praw-dev/praw/issues/1939).
+const LEADING_SUBREDDIT_PREFIX = /^\/?r\//i;
+
 interface RedditTokenResponse {
   access_token: string;
   token_type: string;
@@ -83,6 +90,20 @@ export class RedditClient {
     return this.accessToken;
   }
 
+  /**
+   * Builds a cause-specific suffix for a failed search request, mirroring
+   * the guidance style used for token-request failures above. Returns an
+   * empty string when no known cause can be diagnosed, so callers can
+   * always append the result directly onto the generic error message.
+   */
+  private diagnoseSearchFailure(status: number, subreddit?: string): string {
+    if (status === 400 && subreddit && LEADING_SUBREDDIT_PREFIX.test(subreddit)) {
+      const cleaned = subreddit.replace(LEADING_SUBREDDIT_PREFIX, "");
+      return ` Your --subreddit value "${subreddit}" has a leading "r/" or "/r/" prefix -- Reddit's API expects just the subreddit name (try "${cleaned}" instead).`;
+    }
+    return "";
+  }
+
   async search(options: RedditSearchOptions): Promise<SearchOutcome> {
     const limit = Math.min(options.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
     const accessToken = await this.getAccessToken();
@@ -108,7 +129,9 @@ export class RedditClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Reddit search request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Reddit search request failed: ${response.status} ${response.statusText}.${this.diagnoseSearchFailure(response.status, options.subreddit)}`,
+      );
     }
 
     const listing = (await response.json()) as RedditListingResponse;

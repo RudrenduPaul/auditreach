@@ -148,6 +148,80 @@ describe("RedditClient", () => {
     await expect(client.search({ query: "test" })).rejects.toThrow(/OAuth token request failed/);
   });
 
+  it("gives cause-specific guidance when the search 400s due to a leading r/ prefix on --subreddit", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          access_token: "tok_abc",
+          token_type: "bearer",
+          expires_in: 3600,
+          scope: "*",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ error: "bad request" }, false, 400));
+
+    const client = new RedditClient(credentials);
+    await expect(
+      client.search({ query: "test", subreddit: "r/MachineLearning" }),
+    ).rejects.toThrow(
+      /Reddit search request failed: 400.*leading "r\/" or "\/r\/" prefix.*try "MachineLearning" instead/,
+    );
+  });
+
+  it("gives the same guidance when --subreddit has a leading /r/ prefix", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          access_token: "tok_abc",
+          token_type: "bearer",
+          expires_in: 3600,
+          scope: "*",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ error: "bad request" }, false, 400));
+
+    const client = new RedditClient(credentials);
+    await expect(
+      client.search({ query: "test", subreddit: "/r/MachineLearning" }),
+    ).rejects.toThrow(/try "MachineLearning" instead/);
+  });
+
+  it("falls back to a generic message for a 400 with no leading r/ prefix on --subreddit", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          access_token: "tok_abc",
+          token_type: "bearer",
+          expires_in: 3600,
+          scope: "*",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ error: "bad request" }, false, 400));
+
+    const client = new RedditClient(credentials);
+    await expect(
+      client.search({ query: "test", subreddit: "MachineLearning" }),
+    ).rejects.toThrow("Reddit search request failed: 400 Error.");
+  });
+
+  it("falls back to a generic message for a 400 with no --subreddit at all", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          access_token: "tok_abc",
+          token_type: "bearer",
+          expires_in: 3600,
+          scope: "*",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ error: "bad request" }, false, 400));
+
+    const client = new RedditClient(credentials);
+    await expect(client.search({ query: "test" })).rejects.toThrow(
+      "Reddit search request failed: 400 Error.",
+    );
+  });
+
   it("reuses a cached token across multiple searches instead of re-authenticating", async () => {
     fetchMock
       .mockResolvedValueOnce(
