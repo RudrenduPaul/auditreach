@@ -58,6 +58,35 @@ Note on `snoowrap`: the original design considered `snoowrap` for the Reddit cli
 
 **PASS.** No blocking findings. Proceeding to README/benchmark and ship.
 
+## Post-review updates (2026-07-12, after the repo went public)
+
+A follow-up audit was run against the live, public repo, both immediately before flipping
+visibility and again immediately after. Findings and fixes, in order:
+
+1. **Pre-public audit** confirmed no leaked secrets or API keys anywhere in git history (full
+   19-commit depth scanned for AWS/OpenAI/Anthropic/GitHub/Slack key patterns and PEM private
+   keys), no `.env` ever tracked, no audit-log or results files ever committed. One string that
+   looked secret-shaped in a test fixture was independently verified as a benign placeholder
+   (34 chars, no digits, no known key-prefix format, contains the literal word "secret").
+2. **The `uuid` CVE this review left deferred** ([GHSA-w5hq-g745-h8pq](https://github.com/advisories/GHSA-w5hq-g745-h8pq))
+   is now resolved: `googleapis` bumped 144.0.0 -> 173.0.0. `npm audit` returns 0 vulnerabilities
+   (was 4 MODERATE). Typecheck, lint, build, and the full test suite were re-verified unaffected.
+3. **Branch protection applied to `main`** ahead of going public: PR + 1 approving review + a
+   passing `ci` status check required, no force-pushes, no branch deletion, admin bypass left on
+   for solo-maintainer commits (`enforce_admins: false`). See `docs/branch-protection.md`.
+4. **CI hardening**: `actions/checkout` and `actions/setup-node` SHA-pinned to their latest
+   release commits (previously pinned to the floating `v4` tag).
+5. **Post-public re-audit caught a real gap the pre-public pass could not have found**: GitHub's
+   native secret scanning, secret scanning push protection, and Dependabot security updates do
+   not turn on automatically just because a repo's visibility flips to public -- all three were
+   off. All three are now enabled. (`secret_scanning_validity_checks` and
+   `secret_scanning_non_provider_patterns` remain unavailable -- GitHub Advanced Security
+   features gated behind a paid tier, not a fixable gap.)
+
+Current posture as of this update: 0 npm vulnerabilities, branch protection live, secret
+scanning + push protection + Dependabot live, no leaked credentials found at any point across
+two independent audit passes.
+
 ---
 
 _This review is an AI-assisted first pass, not a substitute for a professional security audit. It catches common vulnerability patterns in a narrow-surface local CLI; it does not replace a qualified penetration test, especially before handling any data more sensitive than public social-media research content._
