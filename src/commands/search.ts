@@ -1,6 +1,9 @@
 import { writeFile } from "node:fs/promises";
-import { RedditClient } from "../clients/reddit-client.js";
-import { YoutubeClient } from "../clients/youtube-client.js";
+import { RedditClient, MAX_LIMIT as REDDIT_MAX_LIMIT } from "../clients/reddit-client.js";
+import {
+  YoutubeClient,
+  MAX_MAX_RESULTS as YOUTUBE_MAX_MAX_RESULTS,
+} from "../clients/youtube-client.js";
 import { getRedditCredentials, getYoutubeCredentials } from "../auth/credential-store.js";
 import { appendAuditLogEntry, getLastEntryHash } from "../audit-log/hash-chain-writer.js";
 import { credentialFingerprint, generateEntryId } from "../util/crypto.js";
@@ -101,6 +104,26 @@ function printResults(outcome: SearchOutcome): void {
   });
   if (outcome.items.length > 10) {
     console.log(`... and ${outcome.items.length - 10} more (see output file)`);
+  }
+  warnIfTruncated(outcome);
+}
+
+function warnIfTruncated(outcome: SearchOutcome): void {
+  const appliedLimit =
+    outcome.platform === "reddit" ? outcome.queryParams.limit : outcome.queryParams.maxResults;
+  if (typeof appliedLimit !== "number" || outcome.items.length < appliedLimit) {
+    return;
+  }
+  const cap = outcome.platform === "reddit" ? REDDIT_MAX_LIMIT : YOUTUBE_MAX_MAX_RESULTS;
+  const platformName = capitalize(outcome.platform);
+  if (appliedLimit < cap) {
+    console.error(
+      `\nWarning: returned exactly ${outcome.items.length} results, the limit applied for this search -- more results may exist. Pass --max-results <n> (up to ${cap} for ${platformName}) to request more.`,
+    );
+  } else {
+    console.error(
+      `\nWarning: returned exactly ${outcome.items.length} results, ${platformName}'s per-request maximum -- more results may exist beyond what a single search call can return.`,
+    );
   }
 }
 

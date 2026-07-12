@@ -2,8 +2,13 @@ import type { RedditCredentials } from "../auth/credential-store.js";
 import type { RedditSearchOptions, SearchOutcome, SearchResultItem } from "../types.js";
 
 const USER_AGENT = "auditreach-cli/0.1.0 (official-API-only compliance research tool)";
-const DEFAULT_LIMIT = 25;
-const MAX_LIMIT = 100;
+// Applied silently when --max-results is omitted, and used as the hard
+// ceiling even when --max-results is passed a larger value. Documented in
+// --help (src/cli.ts) and README.md so a caller cannot be silently truncated
+// without knowing more results exist -- see the truncation warning emitted
+// by src/commands/search.ts.
+export const DEFAULT_LIMIT = 25;
+export const MAX_LIMIT = 100;
 const TOKEN_URL = "https://www.reddit.com/api/v1/access_token";
 const API_BASE = "https://oauth.reddit.com";
 
