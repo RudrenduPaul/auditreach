@@ -49,6 +49,14 @@ program
       return parsed;
     },
   )
+  .option(
+    "--before <fullname>",
+    "page results before this Reddit fullname cursor, e.g. t3_abc123 (reddit only)",
+  )
+  .option(
+    "--after <fullname>",
+    "page results after this Reddit fullname cursor, e.g. t3_abc123 (reddit only)",
+  )
   .option("--output <path>", "write full results JSON to this path")
   .action(async (opts) => {
     assertPlatform(opts.platform);
@@ -59,6 +67,8 @@ program
       channel: opts.channel,
       since: opts.since,
       maxResults: opts.maxResults,
+      before: opts.before,
+      after: opts.after,
       output: opts.output,
     });
   });
