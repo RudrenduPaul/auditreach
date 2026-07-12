@@ -1,18 +1,39 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const setCredentialMock = vi.fn();
 const deleteCredentialMock = vi.fn();
+const getRedditCredentialsMock = vi.fn();
+const getYoutubeCredentialsMock = vi.fn();
 const promptTextMock = vi.fn();
 const promptSecretMock = vi.fn();
+const redditVerifyMock = vi.fn();
+const youtubeVerifyMock = vi.fn();
 
 vi.mock("../src/auth/credential-store.js", () => ({
   setCredential: setCredentialMock,
   deleteCredential: deleteCredentialMock,
+  getRedditCredentials: getRedditCredentialsMock,
+  getYoutubeCredentials: getYoutubeCredentialsMock,
 }));
 
 vi.mock("../src/util/prompt.js", () => ({
   promptText: promptTextMock,
   promptSecret: promptSecretMock,
+}));
+
+vi.mock("../src/clients/reddit-client.js", () => ({
+  RedditClient: vi.fn(function (this: unknown) {
+    return { verifyCredentials: redditVerifyMock };
+  }),
+}));
+
+vi.mock("../src/clients/youtube-client.js", () => ({
+  YoutubeClient: vi.fn(function (this: unknown) {
+    return { verifyCredentials: youtubeVerifyMock };
+  }),
 }));
 
 const { runAuthCommand } = await import("../src/commands/auth.js");
@@ -21,9 +42,19 @@ describe("runAuthCommand", () => {
   beforeEach(() => {
     setCredentialMock.mockReset();
     deleteCredentialMock.mockReset();
+    getRedditCredentialsMock.mockReset();
+    getYoutubeCredentialsMock.mockReset();
     promptTextMock.mockReset();
     promptSecretMock.mockReset();
+    redditVerifyMock.mockReset();
+    youtubeVerifyMock.mockReset();
     vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    process.exitCode = 0;
+  });
+
+  afterEach(() => {
+    process.exitCode = 0;
   });
 
   it("prompts for and stores all four Reddit credential fields", async () => {
@@ -74,5 +105,98 @@ describe("runAuthCommand", () => {
   it("clears the YouTube API key with --clear", async () => {
     await runAuthCommand({ platform: "youtube", clear: true });
     expect(deleteCredentialMock).toHaveBeenCalledWith("youtube", "apiKey");
+  });
+
+  describe("--verify", () => {
+    let tmpDir: string;
+
+    beforeEach(async () => {
+      tmpDir = await mkdtemp(path.join(tmpdir(), "auditreach-auth-verify-"));
+      process.chdir(tmpDir);
+    });
+
+    afterEach(async () => {
+      await rm(tmpDir, { recursive: true, force: true });
+    });
+
+    it("reports success for valid Reddit credentials with no results file or audit-log entry", async () => {
+      getRedditCredentialsMock.mockReturnValue({
+        clientId: "id",
+        clientSecret: "secret",
+        username: "user",
+        password: "pass",
+      });
+      redditVerifyMock.mockResolvedValue(undefined);
+
+      await runAuthCommand({ platform: "reddit", verify: true });
+
+      expect(redditVerifyMock).toHaveBeenCalledTimes(1);
+      expect(process.exitCode).toBe(0);
+      expect(setCredentialMock).not.toHaveBeenCalled();
+      expect(await readdir(tmpDir)).toHaveLength(0);
+    });
+
+    it("reports a clear failure message for invalid Reddit credentials with no results file or audit-log entry", async () => {
+      getRedditCredentialsMock.mockReturnValue({
+        clientId: "id",
+        clientSecret: "secret",
+        username: "user",
+        password: "pass",
+      });
+      redditVerifyMock.mockRejectedValue(
+        new Error(
+          'Reddit OAuth token request failed: 401 Unauthorized. Check your credentials with "auditreach auth --platform reddit".',
+        ),
+      );
+      const errorSpy = vi.spyOn(console, "error");
+
+      await runAuthCommand({ platform: "reddit", verify: true });
+
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("credential check failed"));
+      expect(await readdir(tmpDir)).toHaveLength(0);
+    });
+
+    it("exits 1 with a helpful message when no Reddit credentials are stored, without calling verifyCredentials", async () => {
+      getRedditCredentialsMock.mockReturnValue(null);
+
+      await runAuthCommand({ platform: "reddit", verify: true });
+
+      expect(process.exitCode).toBe(1);
+      expect(redditVerifyMock).not.toHaveBeenCalled();
+      expect(await readdir(tmpDir)).toHaveLength(0);
+    });
+
+    it("reports success for valid YouTube credentials with no results file or audit-log entry", async () => {
+      getYoutubeCredentialsMock.mockReturnValue({ apiKey: "key" });
+      youtubeVerifyMock.mockResolvedValue(undefined);
+
+      await runAuthCommand({ platform: "youtube", verify: true });
+
+      expect(youtubeVerifyMock).toHaveBeenCalledTimes(1);
+      expect(process.exitCode).toBe(0);
+      expect(await readdir(tmpDir)).toHaveLength(0);
+    });
+
+    it("reports a clear failure message for invalid YouTube credentials", async () => {
+      getYoutubeCredentialsMock.mockReturnValue({ apiKey: "bad-key" });
+      youtubeVerifyMock.mockRejectedValue(new Error("API key not valid. Please pass a valid API key."));
+      const errorSpy = vi.spyOn(console, "error");
+
+      await runAuthCommand({ platform: "youtube", verify: true });
+
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("credential check failed"));
+      expect(await readdir(tmpDir)).toHaveLength(0);
+    });
+
+    it("exits 1 with a helpful message when no YouTube credentials are stored, without calling verifyCredentials", async () => {
+      getYoutubeCredentialsMock.mockReturnValue(null);
+
+      await runAuthCommand({ platform: "youtube", verify: true });
+
+      expect(process.exitCode).toBe(1);
+      expect(youtubeVerifyMock).not.toHaveBeenCalled();
+    });
   });
 });
