@@ -5,6 +5,7 @@
 Research Reddit and YouTube from your AI agent using only official APIs, your own keys, and a log that proves exactly what you queried and why it was allowed.
 
 [![CI](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml/badge.svg)](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/auditreach-cli)](https://www.npmjs.com/package/auditreach-cli)
 [![License: Apache 2.0](https://img.shields.io/github/license/RudrenduPaul/auditreach)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
 
@@ -18,7 +19,18 @@ Research Reddit and YouTube from your AI agent using only official APIs, your ow
 
 ## Install
 
-There's no published npm package yet -- clone and build directly, verified working end to end:
+```sh
+npx auditreach-cli search --platform reddit --query "your query"
+```
+
+Or install it globally:
+
+```sh
+npm install -g auditreach-cli
+auditreach search --platform reddit --query "your query"
+```
+
+Building from source works the same way, if you want to read or modify the code first:
 
 ```sh
 git clone https://github.com/RudrenduPaul/auditreach.git
@@ -107,7 +119,7 @@ See `docs/security-review-2026-07-12.md` for how the tamper-detection path was v
 
 ## Getting started
 
-**1. Install:** see [Install](#install) above -- clone and build, `npm install -g` isn't available yet.
+**1. Install:** see [Install](#install) above -- `npx auditreach-cli`, `npm install -g auditreach-cli`, or clone and build from source.
 
 **2. Set up credentials for the platform you want to search (BYO-key -- your own, never ours):**
 
