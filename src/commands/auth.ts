@@ -1,15 +1,28 @@
-import { setCredential, deleteCredential } from "../auth/credential-store.js";
+import {
+  setCredential,
+  deleteCredential,
+  getRedditCredentials,
+  getYoutubeCredentials,
+} from "../auth/credential-store.js";
 import { promptText, promptSecret } from "../util/prompt.js";
+import { RedditClient } from "../clients/reddit-client.js";
+import { YoutubeClient } from "../clients/youtube-client.js";
 import type { Platform } from "../types.js";
 
 export interface AuthCommandArgs {
   platform: Platform;
   clear?: boolean;
+  verify?: boolean;
 }
 
 export async function runAuthCommand(args: AuthCommandArgs): Promise<void> {
   if (args.clear) {
     await clearCredentials(args.platform);
+    return;
+  }
+
+  if (args.verify) {
+    await verifyCredentials(args.platform);
     return;
   }
 
@@ -51,4 +64,49 @@ async function clearCredentials(platform: Platform): Promise<void> {
     deleteCredential("youtube", "apiKey");
   }
   console.log(`Cleared stored credentials for ${platform}.`);
+}
+
+/**
+ * Standalone credential check for `auditreach auth --verify`. Reuses each
+ * client's token-fetch/auth-check logic (never duplicates it) and performs
+ * a single minimal authenticated request. Unlike `search`, this never
+ * requires --query, never writes a results file, and never appends an
+ * audit-log entry -- it only reports whether the stored credentials work.
+ */
+async function verifyCredentials(platform: Platform): Promise<void> {
+  if (platform === "reddit") {
+    const credentials = getRedditCredentials();
+    if (!credentials) {
+      console.error('No Reddit credentials found. Run "auditreach auth --platform reddit" first.');
+      process.exitCode = 1;
+      return;
+    }
+    try {
+      await new RedditClient(credentials).verifyCredentials();
+      console.log("Reddit credentials are valid.");
+    } catch (error) {
+      console.error(
+        `Reddit credential check failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exitCode = 1;
+    }
+  } else {
+    const credentials = getYoutubeCredentials();
+    if (!credentials) {
+      console.error(
+        'No YouTube credentials found. Run "auditreach auth --platform youtube" first.',
+      );
+      process.exitCode = 1;
+      return;
+    }
+    try {
+      await new YoutubeClient(credentials).verifyCredentials();
+      console.log("YouTube credentials are valid.");
+    } catch (error) {
+      console.error(
+        `YouTube credential check failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exitCode = 1;
+    }
+  }
 }
