@@ -13,6 +13,8 @@ export interface SearchCommandArgs {
   channel?: string;
   since?: string;
   maxResults?: number;
+  before?: string;
+  after?: string;
   output?: string;
 }
 
@@ -37,6 +39,8 @@ export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
       query: args.query,
       subreddit: args.subreddit,
       limit: args.maxResults,
+      before: args.before,
+      after: args.after,
     });
     fingerprintSource = credentials.clientSecret;
   } else {
