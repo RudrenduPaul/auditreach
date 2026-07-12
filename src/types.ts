@@ -34,6 +34,12 @@ export interface SearchResultItem {
   extra: Record<string, unknown>;
 }
 
+/** Cursor fullnames read back from a platform's response, for requesting the next/previous page. */
+export interface SearchCursor {
+  after: string | null;
+  before: string | null;
+}
+
 export interface SearchOutcome {
   platform: Platform;
   endpoint: string;
@@ -41,6 +47,8 @@ export interface SearchOutcome {
   authScope: string;
   consentBasis: string;
   items: SearchResultItem[];
+  /** Pagination cursors extracted from the response itself (not an echo of the request params). Populated when the platform's API exposes them. */
+  nextCursor?: SearchCursor;
 }
 
 export interface RedditSearchOptions {

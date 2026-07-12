@@ -30,6 +30,11 @@ interface RedditPostChild {
 interface RedditListingResponse {
   data: {
     children: RedditPostChild[];
+    // Reddit's Listing envelope carries the pagination cursors as siblings
+    // of `children`, not inside each post. These are what a caller needs to
+    // fetch the next/previous page -- see praw#614.
+    after: string | null;
+    before: string | null;
   };
 }
 
@@ -151,6 +156,15 @@ export class RedditClient {
       consentBasis:
         "Reddit API Terms -- public content, official API, read-only script-app credentials",
       items,
+      // Cursors read back from Reddit's own response (not an echo of the
+      // request params above) -- feed `nextCursor.after` into the next
+      // call's `--after`/`options.after` to walk forward through results
+      // past the ~1000-result search cap, and `nextCursor.before` to walk
+      // backward. This is the piece praw#614 was actually stuck on.
+      nextCursor: {
+        after: listing.data.after ?? null,
+        before: listing.data.before ?? null,
+      },
     };
   }
 }

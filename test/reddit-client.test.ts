@@ -18,6 +18,15 @@ function jsonResponse(body: unknown, ok = true, status = 200): Response {
   } as Response;
 }
 
+function tokenResponse(accessToken: string) {
+  return jsonResponse({
+    access_token: accessToken,
+    token_type: "bearer",
+    expires_in: 3600,
+    scope: "*",
+  });
+}
+
 describe("RedditClient", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -32,14 +41,7 @@ describe("RedditClient", () => {
 
   it("requests an OAuth token before searching, then calls the search endpoint", async () => {
     fetchMock
-      .mockResolvedValueOnce(
-        jsonResponse({
-          access_token: "tok_abc",
-          token_type: "bearer",
-          expires_in: 3600,
-          scope: "*",
-        }),
-      )
+      .mockResolvedValueOnce(tokenResponse("tok_abc"))
       .mockResolvedValueOnce(jsonResponse({ data: { children: [] } }));
 
     const client = new RedditClient(credentials);
@@ -58,14 +60,7 @@ describe("RedditClient", () => {
 
   it("never sends the client secret or password in the search request headers", async () => {
     fetchMock
-      .mockResolvedValueOnce(
-        jsonResponse({
-          access_token: "tok_xyz",
-          token_type: "bearer",
-          expires_in: 3600,
-          scope: "*",
-        }),
-      )
+      .mockResolvedValueOnce(tokenResponse("tok_xyz"))
       .mockResolvedValueOnce(jsonResponse({ data: { children: [] } }));
 
     const client = new RedditClient(credentials);
@@ -79,14 +74,7 @@ describe("RedditClient", () => {
 
   it("scopes the search to a subreddit when provided", async () => {
     fetchMock
-      .mockResolvedValueOnce(
-        jsonResponse({
-          access_token: "tok_abc",
-          token_type: "bearer",
-          expires_in: 3600,
-          scope: "*",
-        }),
-      )
+      .mockResolvedValueOnce(tokenResponse("tok_abc"))
       .mockResolvedValueOnce(jsonResponse({ data: { children: [] } }));
 
     const client = new RedditClient(credentials);
@@ -98,35 +86,26 @@ describe("RedditClient", () => {
   });
 
   it("normalizes returned posts into SearchResultItem shape", async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        jsonResponse({
-          access_token: "tok_abc",
-          token_type: "bearer",
-          expires_in: 3600,
-          scope: "*",
-        }),
-      )
-      .mockResolvedValueOnce(
-        jsonResponse({
-          data: {
-            children: [
-              {
-                data: {
-                  id: "abc123",
-                  title: "A real post",
-                  permalink: "/r/test/comments/abc123/a_real_post/",
-                  created_utc: 1_720_000_000,
-                  author: "some_user",
-                  score: 42,
-                  subreddit_name_prefixed: "r/test",
-                  num_comments: 7,
-                },
+    fetchMock.mockResolvedValueOnce(tokenResponse("tok_abc")).mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          children: [
+            {
+              data: {
+                id: "abc123",
+                title: "A real post",
+                permalink: "/r/test/comments/abc123/a_real_post/",
+                created_utc: 1_720_000_000,
+                author: "some_user",
+                score: 42,
+                subreddit_name_prefixed: "r/test",
+                num_comments: 7,
               },
-            ],
-          },
-        }),
-      );
+            },
+          ],
+        },
+      }),
+    );
 
     const client = new RedditClient(credentials);
     const outcome = await client.search({ query: "test" });
@@ -150,14 +129,7 @@ describe("RedditClient", () => {
 
   it("reuses a cached token across multiple searches instead of re-authenticating", async () => {
     fetchMock
-      .mockResolvedValueOnce(
-        jsonResponse({
-          access_token: "tok_cached",
-          token_type: "bearer",
-          expires_in: 3600,
-          scope: "*",
-        }),
-      )
+      .mockResolvedValueOnce(tokenResponse("tok_cached"))
       .mockResolvedValueOnce(jsonResponse({ data: { children: [] } }))
       .mockResolvedValueOnce(jsonResponse({ data: { children: [] } }));
 
@@ -171,14 +143,7 @@ describe("RedditClient", () => {
 
   it("passes before/after cursor params through to the search request when supplied", async () => {
     fetchMock
-      .mockResolvedValueOnce(
-        jsonResponse({
-          access_token: "tok_page",
-          token_type: "bearer",
-          expires_in: 3600,
-          scope: "*",
-        }),
-      )
+      .mockResolvedValueOnce(tokenResponse("tok_page"))
       .mockResolvedValueOnce(jsonResponse({ data: { children: [] } }));
 
     const client = new RedditClient(credentials);
@@ -198,14 +163,7 @@ describe("RedditClient", () => {
 
   it("omits before/after params entirely when not supplied", async () => {
     fetchMock
-      .mockResolvedValueOnce(
-        jsonResponse({
-          access_token: "tok_nopage",
-          token_type: "bearer",
-          expires_in: 3600,
-          scope: "*",
-        }),
-      )
+      .mockResolvedValueOnce(tokenResponse("tok_nopage"))
       .mockResolvedValueOnce(jsonResponse({ data: { children: [] } }));
 
     const client = new RedditClient(credentials);
@@ -215,5 +173,57 @@ describe("RedditClient", () => {
     const requestUrl = new URL(searchCall[0]);
     expect(requestUrl.searchParams.has("after")).toBe(false);
     expect(requestUrl.searchParams.has("before")).toBe(false);
+  });
+
+  it("extracts the after/before pagination cursors from the response listing (praw#614)", async () => {
+    fetchMock.mockResolvedValueOnce(tokenResponse("tok_cursor")).mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          after: "t3_nextpage001",
+          before: "t3_prevpage002",
+          children: [
+            {
+              data: {
+                id: "xyz789",
+                title: "Another post",
+                permalink: "/r/test/comments/xyz789/another_post/",
+                created_utc: 1_720_000_000,
+                author: "another_user",
+                score: 5,
+                subreddit_name_prefixed: "r/test",
+                num_comments: 1,
+              },
+            },
+          ],
+        },
+      }),
+    );
+
+    const client = new RedditClient(credentials);
+    const outcome = await client.search({ query: "test" });
+
+    // These come from Reddit's response, not an echo of the request --
+    // this is the "page 2 cursor" the reporter of praw#614 was stuck on.
+    expect(outcome.nextCursor).toEqual({
+      after: "t3_nextpage001",
+      before: "t3_prevpage002",
+    });
+  });
+
+  it("returns null cursors when the response listing has no more pages", async () => {
+    fetchMock.mockResolvedValueOnce(tokenResponse("tok_lastpage")).mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          after: null,
+          before: null,
+          children: [],
+        },
+      }),
+    );
+
+    const client = new RedditClient(credentials);
+    const outcome = await client.search({ query: "test" });
+
+    expect(outcome.nextCursor).toEqual({ after: null, before: null });
   });
 });
