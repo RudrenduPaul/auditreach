@@ -17,12 +17,14 @@ vi.mock("../src/clients/reddit-client.js", () => ({
   RedditClient: vi.fn(function (this: unknown) {
     return { search: redditSearchMock };
   }),
+  MAX_LIMIT: 100,
 }));
 
 vi.mock("../src/clients/youtube-client.js", () => ({
   YoutubeClient: vi.fn(function (this: unknown) {
     return { search: youtubeSearchMock };
   }),
+  MAX_MAX_RESULTS: 50,
 }));
 
 const { runSearchCommand } = await import("../src/commands/search.js");
@@ -36,8 +38,12 @@ beforeEach(async () => {
   getYoutubeCredentialsMock.mockReset();
   redditSearchMock.mockReset();
   youtubeSearchMock.mockReset();
-  vi.spyOn(console, "log").mockImplementation(() => undefined);
-  vi.spyOn(console, "error").mockImplementation(() => undefined);
+  vi.spyOn(console, "log")
+    .mockImplementation(() => undefined)
+    .mockClear();
+  vi.spyOn(console, "error")
+    .mockImplementation(() => undefined)
+    .mockClear();
   process.exitCode = 0;
 });
 
@@ -162,5 +168,337 @@ describe("runSearchCommand", () => {
 
     expect(youtubeSearchMock).toHaveBeenCalled();
     expect(process.exitCode).toBe(0);
+  });
+
+  it("warns on stderr when the result count equals the applied (silent default) limit", async () => {
+    getRedditCredentialsMock.mockReturnValue({
+      clientId: "id",
+      clientSecret: "secret",
+      username: "user",
+      password: "pass",
+    });
+    redditSearchMock.mockResolvedValue({
+      ...sampleOutcome,
+      queryParams: { query: "test", limit: 25 },
+      items: [
+        {
+          id: "item-0",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-0",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-1",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-1",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-2",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-2",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-3",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-3",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-4",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-4",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-5",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-5",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-6",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-6",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-7",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-7",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-8",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-8",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-9",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-9",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-10",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-10",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-11",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-11",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-12",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-12",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-13",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-13",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-14",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-14",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-15",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-15",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-16",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-16",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-17",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-17",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-18",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-18",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-19",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-19",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-20",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-20",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-21",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-21",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-22",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-22",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-23",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-23",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-24",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-24",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+      ],
+    });
+
+    await runSearchCommand({ platform: "reddit", query: "test", output: "results.json" });
+
+    const errorCalls = (console.error as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const warned = errorCalls.some((call) => String(call[0]).includes("Warning"));
+    expect(warned).toBe(true);
+  });
+
+  it("warns on stderr when the result count equals an explicit --max-results value", async () => {
+    getYoutubeCredentialsMock.mockReturnValue({ apiKey: "yt-key" });
+    youtubeSearchMock.mockResolvedValue({
+      ...sampleOutcome,
+      platform: "youtube",
+      queryParams: { query: "test", maxResults: 5 },
+      items: [
+        {
+          id: "item-0",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-0",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-1",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-1",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-2",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-2",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-3",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-3",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+        {
+          id: "item-4",
+          title: "A post",
+          url: "https://reddit.com/r/test/item-4",
+          createdAt: "2026-07-12T00:00:00.000Z",
+          author: "someone",
+          score: 10,
+          extra: {},
+        },
+      ],
+    });
+
+    await runSearchCommand({
+      platform: "youtube",
+      query: "test",
+      maxResults: 5,
+      output: "yt.json",
+    });
+
+    const errorCalls = (console.error as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const warned = errorCalls.some((call) => String(call[0]).includes("Warning"));
+    expect(warned).toBe(true);
+  });
+
+  it("does not warn when the result count is below the applied limit", async () => {
+    getRedditCredentialsMock.mockReturnValue({
+      clientId: "id",
+      clientSecret: "secret",
+      username: "user",
+      password: "pass",
+    });
+    redditSearchMock.mockResolvedValue({
+      ...sampleOutcome,
+      queryParams: { query: "test", limit: 25 },
+    });
+
+    await runSearchCommand({ platform: "reddit", query: "test", output: "results.json" });
+
+    const errorCalls = (console.error as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const warned = errorCalls.some((call) => String(call[0]).includes("Warning"));
+    expect(warned).toBe(false);
   });
 });
