@@ -106,6 +106,12 @@ function printResults(outcome: SearchOutcome): void {
   if (outcome.items.length > 10) {
     console.log(`... and ${outcome.items.length - 10} more (see output file)`);
   }
+  if (outcome.nextCursor?.after) {
+    console.log(`\nNext page: rerun with --after ${outcome.nextCursor.after}`);
+  }
+  if (outcome.nextCursor?.before) {
+    console.log(`Previous page: rerun with --before ${outcome.nextCursor.before}`);
+  }
 }
 
 function capitalize(value: string): string {
