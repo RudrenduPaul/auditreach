@@ -109,6 +109,19 @@ export class RedditClient {
     return "";
   }
 
+  /**
+   * Performs the same OAuth token request used before every search, but
+   * without issuing a search call. Used by `auditreach auth --verify` to
+   * check credentials without requiring --query and without touching the
+   * results file or audit log. Always forces a fresh token request rather
+   * than reusing a cached one, so it reflects the current credential state.
+   */
+  async verifyCredentials(): Promise<void> {
+    this.accessToken = null;
+    this.tokenExpiresAt = 0;
+    await this.getAccessToken();
+  }
+
   async search(options: RedditSearchOptions): Promise<SearchOutcome> {
     const limit = Math.min(options.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
     const accessToken = await this.getAccessToken();
