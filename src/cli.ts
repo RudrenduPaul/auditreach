@@ -4,6 +4,11 @@ import { runSearchCommand } from "./commands/search.js";
 import { runAuthCommand } from "./commands/auth.js";
 import { runVerifyLogCommand } from "./commands/verify-log.js";
 import type { Platform } from "./types.js";
+import {
+  DEFAULT_LIMIT as REDDIT_DEFAULT_LIMIT,
+  MAX_LIMIT as REDDIT_MAX_LIMIT,
+} from "./clients/reddit-client.js";
+import { MAX_MAX_RESULTS as YOUTUBE_MAX_MAX_RESULTS } from "./clients/youtube-client.js";
 
 const VERSION = "0.1.0";
 
@@ -33,13 +38,17 @@ program
     "--since <date>",
     "only results published after this date, e.g. 2026-06-01 (youtube only)",
   )
-  .option("--max-results <n>", "maximum results to return", (v) => {
-    const parsed = parseInt(v, 10);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      throw new Error(`--max-results must be a positive integer, got "${v}"`);
-    }
-    return parsed;
-  })
+  .option(
+    "--max-results <n>",
+    `maximum results to return (default: ${REDDIT_DEFAULT_LIMIT}; platform caps: ${REDDIT_MAX_LIMIT} Reddit / ${YOUTUBE_MAX_MAX_RESULTS} YouTube)`,
+    (v) => {
+      const parsed = parseInt(v, 10);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        throw new Error(`--max-results must be a positive integer, got "${v}"`);
+      }
+      return parsed;
+    },
+  )
   .option("--output <path>", "write full results JSON to this path")
   .action(async (opts) => {
     assertPlatform(opts.platform);

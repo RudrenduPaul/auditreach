@@ -2,8 +2,13 @@ import { google } from "googleapis";
 import type { YoutubeCredentials } from "../auth/credential-store.js";
 import type { SearchOutcome, SearchResultItem, YoutubeSearchOptions } from "../types.js";
 
-const DEFAULT_MAX_RESULTS = 25;
-const MAX_MAX_RESULTS = 50;
+// Applied silently when --max-results is omitted, and used as the hard
+// ceiling even when --max-results is passed a larger value. Documented in
+// --help (src/cli.ts) and README.md so a caller cannot be silently truncated
+// without knowing more results exist -- see the truncation warning emitted
+// by src/commands/search.ts.
+export const DEFAULT_MAX_RESULTS = 25;
+export const MAX_MAX_RESULTS = 50;
 
 export class YoutubeClient {
   private readonly youtube: ReturnType<typeof google.youtube>;

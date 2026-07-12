@@ -97,6 +97,17 @@ Honest note on setup time: getting your own API credentials from Reddit and Goog
 | YouTube     | YouTube Data API v3 (`googleapis`)              | Shipped             | Quota-based (10,000 units/day default), generally workable                                                                                                                                                                                                                                                                                                                                 |
 | X (Twitter) | X API v2                                        | **Not yet shipped** | X's official API pricing and post-volume caps have been widely reported as prohibitive for small teams doing meaningful research since the 2023 pricing changes. Deferred until a real user needs it enough to fund working around that constraint -- shipping it half-working would undercut the entire "honest about what official APIs can and can't do" premise this tool is built on. |
 
+## Result limits
+
+`--max-results <n>` controls how many items a single `search` call returns. Leave it off and auditreach silently applies a default of 25 -- the same shape of surprise PRAW's `get_comments()` had for years ([praw#119](https://github.com/praw-dev/praw/issues/119)): a caller who does not already know to pass the flag gets a quietly truncated result set.
+
+| Platform | Default (flag omitted) | Maximum (`--max-results`) |
+| -------- | ---------------------- | ------------------------- |
+| Reddit   | 25                     | 100                       |
+| YouTube  | 25                     | 50                        |
+
+Values above the cap are silently clamped to it -- there is currently no way to page past a platform's per-request maximum in a single `search` call. Whenever the number of items returned equals the limit that was actually applied, whether that is the silent default or an explicit `--max-results` value, auditreach prints a warning to stderr telling you more results may exist and how to raise `--max-results` (up to the platform cap).
+
 ## What is a "consent basis," honestly
 
 The `consent_basis` field on every audit-log entry names the specific platform API terms and auth mechanism used for that query. It certifies that the request went through the platform's official, documented API surface under the credentials you supplied. **It does not certify that your specific use case is legally sufficient for your jurisdiction or contract** -- that determination is yours to make, informed by an accurate, complete, tamper-evident record of what actually happened.
