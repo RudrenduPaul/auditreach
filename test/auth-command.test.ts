@@ -200,5 +200,44 @@ describe("runAuthCommand", () => {
       expect(process.exitCode).toBe(1);
       expect(youtubeVerifyMock).not.toHaveBeenCalled();
     });
+
+    describe("--json", () => {
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it("prints one parseable JSON object for valid credentials", async () => {
+        getRedditCredentialsMock.mockReturnValue({
+          clientId: "id",
+          clientSecret: "secret",
+          username: "user",
+          password: "pass",
+        });
+        redditVerifyMock.mockResolvedValue(undefined);
+        const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+        await runAuthCommand({ platform: "reddit", verify: true, json: true });
+
+        expect(writeSpy).toHaveBeenCalledTimes(1);
+        const printed = JSON.parse(writeSpy.mock.calls[0]![0] as string);
+        expect(printed).toEqual({ platform: "reddit", valid: true, error: null });
+        expect(process.exitCode).toBe(0);
+      });
+
+      it("prints one parseable JSON object with the error for invalid credentials, never throwing", async () => {
+        getYoutubeCredentialsMock.mockReturnValue({ apiKey: "bad-key" });
+        youtubeVerifyMock.mockRejectedValue(
+          new Error("API key not valid. Please pass a valid API key."),
+        );
+        const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+        await runAuthCommand({ platform: "youtube", verify: true, json: true });
+
+        const printed = JSON.parse(writeSpy.mock.calls[0]![0] as string);
+        expect(printed.valid).toBe(false);
+        expect(printed.error).toContain("credential check failed");
+        expect(process.exitCode).toBe(1);
+      });
+    });
   });
 });

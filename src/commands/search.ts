@@ -19,6 +19,7 @@ export interface SearchCommandArgs {
   before?: string;
   after?: string;
   output?: string;
+  json?: boolean;
 }
 
 export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
@@ -65,7 +66,9 @@ export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
     fingerprintSource = credentials.apiKey;
   }
 
-  printResults(outcome);
+  if (!args.json) {
+    printResults(outcome);
+  }
 
   const outputPath = args.output ?? defaultOutputPath();
   await writeFile(outputPath, JSON.stringify(outcome.items, null, 2), "utf8");
@@ -83,6 +86,29 @@ export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
     results_returned: outcome.items.length,
     prev_entry_hash: prevHash,
   });
+
+  if (args.json) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          platform: outcome.platform,
+          endpoint: outcome.endpoint,
+          queryParams: outcome.queryParams,
+          authScope: outcome.authScope,
+          consentBasis: outcome.consentBasis,
+          items: outcome.items,
+          nextCursor: outcome.nextCursor ?? null,
+          truncated: isTruncated(outcome),
+          auditLogEntryId: entry.entry_id,
+          resultsFile: outputPath,
+          auditLogFile: "./auditreach.log.jsonl",
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return;
+  }
 
   console.log(`\nAudit log entry written: ${entry.entry_id}`);
   console.log(`Consent basis: ${entry.consent_basis}`);
@@ -119,14 +145,14 @@ function printResults(outcome: SearchOutcome): void {
 }
 
 function warnIfTruncated(outcome: SearchOutcome): void {
-  const appliedLimit =
-    outcome.platform === "reddit" ? outcome.queryParams.limit : outcome.queryParams.maxResults;
-  if (typeof appliedLimit !== "number" || outcome.items.length < appliedLimit) {
+  if (!isTruncated(outcome)) {
     return;
   }
+  const appliedLimit =
+    outcome.platform === "reddit" ? outcome.queryParams.limit : outcome.queryParams.maxResults;
   const cap = outcome.platform === "reddit" ? REDDIT_MAX_LIMIT : YOUTUBE_MAX_MAX_RESULTS;
   const platformName = capitalize(outcome.platform);
-  if (appliedLimit < cap) {
+  if (typeof appliedLimit === "number" && appliedLimit < cap) {
     console.error(
       `\nWarning: returned exactly ${outcome.items.length} results, the limit applied for this search -- more results may exist. Pass --max-results <n> (up to ${cap} for ${platformName}) to request more.`,
     );
@@ -135,6 +161,13 @@ function warnIfTruncated(outcome: SearchOutcome): void {
       `\nWarning: returned exactly ${outcome.items.length} results, ${platformName}'s per-request maximum -- more results may exist beyond what a single search call can return.`,
     );
   }
+}
+
+/** True when the result count exactly hits the applied limit, meaning more results may exist beyond what this single call returned. Shared by the human-readable warning and the --json `truncated` field so both reflect the same signal. */
+function isTruncated(outcome: SearchOutcome): boolean {
+  const appliedLimit =
+    outcome.platform === "reddit" ? outcome.queryParams.limit : outcome.queryParams.maxResults;
+  return typeof appliedLimit === "number" && outcome.items.length >= appliedLimit;
 }
 
 function capitalize(value: string): string {
