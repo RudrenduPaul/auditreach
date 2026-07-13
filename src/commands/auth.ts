@@ -13,6 +13,7 @@ export interface AuthCommandArgs {
   platform: Platform;
   clear?: boolean;
   verify?: boolean;
+  json?: boolean;
 }
 
 export async function runAuthCommand(args: AuthCommandArgs): Promise<void> {
@@ -22,7 +23,7 @@ export async function runAuthCommand(args: AuthCommandArgs): Promise<void> {
   }
 
   if (args.verify) {
-    await verifyCredentials(args.platform);
+    await verifyCredentials(args.platform, Boolean(args.json));
     return;
   }
 
@@ -73,40 +74,55 @@ async function clearCredentials(platform: Platform): Promise<void> {
  * requires --query, never writes a results file, and never appends an
  * audit-log entry -- it only reports whether the stored credentials work.
  */
-async function verifyCredentials(platform: Platform): Promise<void> {
-  if (platform === "reddit") {
-    const credentials = getRedditCredentials();
-    if (!credentials) {
-      console.error('No Reddit credentials found. Run "auditreach auth --platform reddit" first.');
-      process.exitCode = 1;
-      return;
-    }
-    try {
+async function verifyCredentials(platform: Platform, json: boolean): Promise<void> {
+  try {
+    if (platform === "reddit") {
+      const credentials = getRedditCredentials();
+      if (!credentials) {
+        report(
+          json,
+          platform,
+          false,
+          'No Reddit credentials found. Run "auditreach auth --platform reddit" first.',
+        );
+        process.exitCode = 1;
+        return;
+      }
       await new RedditClient(credentials).verifyCredentials();
-      console.log("Reddit credentials are valid.");
-    } catch (error) {
-      console.error(
-        `Reddit credential check failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      process.exitCode = 1;
-    }
-  } else {
-    const credentials = getYoutubeCredentials();
-    if (!credentials) {
-      console.error(
-        'No YouTube credentials found. Run "auditreach auth --platform youtube" first.',
-      );
-      process.exitCode = 1;
-      return;
-    }
-    try {
+    } else {
+      const credentials = getYoutubeCredentials();
+      if (!credentials) {
+        report(
+          json,
+          platform,
+          false,
+          'No YouTube credentials found. Run "auditreach auth --platform youtube" first.',
+        );
+        process.exitCode = 1;
+        return;
+      }
       await new YoutubeClient(credentials).verifyCredentials();
-      console.log("YouTube credentials are valid.");
-    } catch (error) {
-      console.error(
-        `YouTube credential check failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      process.exitCode = 1;
     }
+    report(json, platform, true);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    report(json, platform, false, `${capitalize(platform)} credential check failed: ${message}`);
+    process.exitCode = 1;
   }
+}
+
+function report(json: boolean, platform: Platform, valid: boolean, error?: string): void {
+  if (json) {
+    process.stdout.write(`${JSON.stringify({ platform, valid, error: error ?? null }, null, 2)}\n`);
+    return;
+  }
+  if (valid) {
+    console.log(`${capitalize(platform)} credentials are valid.`);
+  } else {
+    console.error(error);
+  }
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

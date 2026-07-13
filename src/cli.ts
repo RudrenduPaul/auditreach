@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { Command } from "commander";
 import { runSearchCommand } from "./commands/search.js";
 import { runAuthCommand } from "./commands/auth.js";
@@ -10,7 +13,12 @@ import {
 } from "./clients/reddit-client.js";
 import { MAX_MAX_RESULTS as YOUTUBE_MAX_MAX_RESULTS } from "./clients/youtube-client.js";
 
-const VERSION = "0.1.0";
+// Read the real published version from package.json instead of a hand-maintained
+// literal, which previously drifted out of sync with every release after 0.1.0.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const { version: VERSION } = JSON.parse(
+  readFileSync(join(__dirname, "..", "package.json"), "utf8"),
+) as { version: string };
 
 function assertPlatform(value: string): asserts value is Platform {
   if (value !== "reddit" && value !== "youtube") {
@@ -58,6 +66,10 @@ program
     "page results after this Reddit fullname cursor, e.g. t3_abc123 (reddit only)",
   )
   .option("--output <path>", "write full results JSON to this path")
+  .option(
+    "--json",
+    "print a single structured JSON object to stdout instead of human-readable text (for scripts and agents)",
+  )
   .action(async (opts) => {
     assertPlatform(opts.platform);
     await runSearchCommand({
@@ -70,6 +82,7 @@ program
       before: opts.before,
       after: opts.after,
       output: opts.output,
+      json: opts.json,
     });
   });
 
@@ -82,17 +95,30 @@ program
     "--verify",
     "verify stored credentials are valid without running a search (no results file, no audit-log entry)",
   )
+  .option(
+    "--json",
+    "with --verify, print a structured JSON result instead of human-readable text (for scripts and agents)",
+  )
   .action(async (opts) => {
     assertPlatform(opts.platform);
-    await runAuthCommand({ platform: opts.platform, clear: opts.clear, verify: opts.verify });
+    await runAuthCommand({
+      platform: opts.platform,
+      clear: opts.clear,
+      verify: opts.verify,
+      json: opts.json,
+    });
   });
 
 program
   .command("verify-log")
   .description("Verify the local hash-chained audit log has not been tampered with")
   .option("--path <path>", "path to the audit log file")
+  .option(
+    "--json",
+    "print a structured JSON result instead of human-readable text (for scripts and agents)",
+  )
   .action(async (opts) => {
-    await runVerifyLogCommand({ path: opts.path });
+    await runVerifyLogCommand({ path: opts.path, json: opts.json });
   });
 
 program.parseAsync(process.argv).catch((error: unknown) => {

@@ -501,4 +501,67 @@ describe("runSearchCommand", () => {
     const warned = errorCalls.some((call) => String(call[0]).includes("Warning"));
     expect(warned).toBe(false);
   });
+
+  describe("--json", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("prints one parseable JSON object instead of human-readable text, and still writes the results file and audit log", async () => {
+      getRedditCredentialsMock.mockReturnValue({
+        clientId: "id",
+        clientSecret: "secret",
+        username: "user",
+        password: "pass",
+      });
+      redditSearchMock.mockResolvedValue(sampleOutcome);
+      const logSpy = vi.spyOn(console, "log");
+      const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+      await runSearchCommand({
+        platform: "reddit",
+        query: "test",
+        output: "results.json",
+        json: true,
+      });
+
+      expect(logSpy).not.toHaveBeenCalled();
+      expect(writeSpy).toHaveBeenCalledTimes(1);
+      const printed = JSON.parse(writeSpy.mock.calls[0]![0] as string);
+      expect(printed.platform).toBe("reddit");
+      expect(printed.items).toHaveLength(1);
+      expect(printed.items[0].id).toBe("abc");
+      expect(typeof printed.auditLogEntryId).toBe("string");
+      expect(printed.resultsFile).toContain("results.json");
+
+      const written = JSON.parse(await readFile(path.join(tmpDir, "results.json"), "utf8"));
+      expect(written).toHaveLength(1);
+      const logContent = await readFile(path.join(tmpDir, "auditreach.log.jsonl"), "utf8");
+      expect(JSON.parse(logContent.trim()).results_returned).toBe(1);
+    });
+
+    it("reports truncated: true in JSON mode when the result count hits the applied limit", async () => {
+      getRedditCredentialsMock.mockReturnValue({
+        clientId: "id",
+        clientSecret: "secret",
+        username: "user",
+        password: "pass",
+      });
+      redditSearchMock.mockResolvedValue({
+        ...sampleOutcome,
+        queryParams: { query: "test", limit: 1 },
+      });
+      const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+      await runSearchCommand({
+        platform: "reddit",
+        query: "test",
+        output: "results.json",
+        json: true,
+      });
+
+      const printed = JSON.parse(writeSpy.mock.calls[0]![0] as string);
+      expect(printed.truncated).toBe(true);
+    });
+  });
 });
