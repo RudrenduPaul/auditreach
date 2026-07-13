@@ -57,4 +57,34 @@ describe("runVerifyLogCommand", () => {
     await runVerifyLogCommand({ path: path.join(tmpDir, "does-not-exist.jsonl") });
     expect(process.exitCode).toBe(0);
   });
+
+  describe("--json", () => {
+    it("prints one parseable JSON object with the chain result for an intact chain", async () => {
+      await appendAuditLogEntry(baseEntry, logPath);
+      const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+      await runVerifyLogCommand({ path: logPath, json: true });
+
+      expect(writeSpy).toHaveBeenCalledTimes(1);
+      const printed = JSON.parse(writeSpy.mock.calls[0]![0] as string);
+      expect(printed).toMatchObject({ logPath, valid: true, totalEntries: 1 });
+      expect(process.exitCode).toBe(0);
+    });
+
+    it("prints one parseable JSON object with the break details for a broken chain", async () => {
+      await appendAuditLogEntry(baseEntry, logPath);
+      await appendAuditLogEntry(
+        { ...baseEntry, entry_id: "ar_2026-07-12_def456", prev_entry_hash: "sha256:wrong" },
+        logPath,
+      );
+      const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+      await runVerifyLogCommand({ path: logPath, json: true });
+
+      const printed = JSON.parse(writeSpy.mock.calls[0]![0] as string);
+      expect(printed.valid).toBe(false);
+      expect(printed.brokenAtEntryId).toBe("ar_2026-07-12_def456");
+      expect(process.exitCode).toBe(1);
+    });
+  });
 });
