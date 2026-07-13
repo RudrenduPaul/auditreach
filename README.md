@@ -272,7 +272,7 @@ No generated API docs site exists yet (no TypeDoc build wired into CI) -- the ex
 | Reddit   | 25                     | 100                       |
 | YouTube  | 25                     | 50                        |
 
-Values above the cap are silently clamped to it. For Reddit, `--before`/`--after` let you page past a single call's results using the real cursor Reddit's own response returns (see [Success stories](#success-stories)); YouTube has no equivalent yet. Whenever the number of items returned equals the limit that was actually applied, whether that is the silent default or an explicit `--max-results` value, auditreach prints a warning to stderr telling you more results may exist and how to raise `--max-results` (up to the platform cap).
+Values above the cap are silently clamped to it. For Reddit, `--before`/`--after` let you page through a search's result set using the real cursor Reddit's own response returns, up to Reddit's own ~1,000-item search cap (see [Success stories](#success-stories) for why cursor pagination alone can't go further than that); YouTube has no equivalent yet. Whenever the number of items returned equals the limit that was actually applied, whether that is the silent default or an explicit `--max-results` value, auditreach prints a warning to stderr telling you more results may exist and how to raise `--max-results` (up to the platform cap).
 
 ## What is a "consent basis," honestly
 
@@ -287,7 +287,7 @@ No. Credentials go straight into your OS keychain through `@napi-rs/keyring` (`s
 25, silently, unless you pass `--max-results` -- see [Result limits](#result-limits). The hard cap is 100 for Reddit and 50 for YouTube. A stderr warning fires whenever a search actually hits the applied limit, whether that's the silent default or an explicit value you passed.
 
 **Can I page past Reddit's result cap?**
-Yes, for Reddit: `search()` reads the real `after`/`before` cursor out of Reddit's own response and exposes `--before`/`--after` flags to page in either direction. See the [praw#614 success story](#success-stories) for why this exists.
+Yes, for Reddit, up to a point: `search()` reads the real `after`/`before` cursor out of Reddit's own response and exposes `--before`/`--after` flags to page in either direction through a search's result set. It does not get you past Reddit's own ~1,000-item search cap -- see the [praw#614 success story](#success-stories) for what that fix actually covers and doesn't.
 
 **Does auditreach support X (Twitter)?**
 Not yet. X API v2's pricing and post-volume caps have been prohibitive for small teams doing real research since the 2023 changes. See [Platform coverage](#platform-coverage) for the full reasoning.
@@ -330,10 +330,14 @@ auditreach's own source and used to close genuine gaps in this tool before it ha
 single outside user. Each line below is tied to the actual report that prompted it.
 
 - **[praw#614](https://github.com/praw-dev/praw/issues/614)** (@mananwason) -- asked how
-  to read the before/after pagination cursor off Reddit's search response to page past
-  its ~1,000-result cap; PRAW itself never solved this. `search()` now extracts the real
-  cursor from Reddit's response and returns it as `SearchOutcome.nextCursor`, plus
-  `--before`/`--after` flags to page in either direction.
+  to page past Reddit's ~1,000-result search cap. The real fix is narrower than that:
+  Reddit's own API returns no before/after cursor at all once you're past that cap,
+  cursor-based paging or not -- confirmed directly in the issue thread. What `search()`
+  actually does now is extract the real cursor from Reddit's response
+  (`SearchOutcome.nextCursor`) and expose `--before`/`--after` flags so you can page
+  through the results within a single search's capped result set, instead of only ever
+  seeing the first page. Going past the 1,000-item cap itself needs cloudsearch
+  timestamp-window re-querying, which isn't built yet.
 - **[praw#1939](https://github.com/praw-dev/praw/issues/1939)** (@Auditormadness9) -- hit
   an undiagnosed 400 error caused by a subreddit name that still carried a leading `r/`
   prefix. Search errors now name that specific cause when it's the likely culprit:

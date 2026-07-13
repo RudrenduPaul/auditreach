@@ -141,9 +141,13 @@ export class RedditClient {
     }
     // Reddit's search listing endpoint accepts standard Listing pagination
     // cursors (before/after, Reddit "fullname" ids e.g. "t3_abc123"). These
-    // let a caller page past the ~1000-result search cap by walking the
-    // listing forward/backward from a known item instead of relying on
-    // offset-based paging, which Reddit's search API does not support.
+    // walk forward/backward through a search's result set instead of relying
+    // on offset-based paging, which Reddit's search API does not support.
+    // They do NOT let a caller retrieve results beyond Reddit's ~1,000-item
+    // search cap -- past that point Reddit's API returns no before/after
+    // cursor at all, cursor-based paging or not (confirmed directly in the
+    // praw#614 thread this fix is based on). Getting past the 1,000-item cap
+    // requires cloudsearch timestamp-window re-querying, not implemented yet.
     if (options.before) {
       params.set("before", options.before);
     }
@@ -199,9 +203,10 @@ export class RedditClient {
       items,
       // Cursors read back from Reddit's own response (not an echo of the
       // request params above) -- feed `nextCursor.after` into the next
-      // call's `--after`/`options.after` to walk forward through results
-      // past the ~1000-result search cap, and `nextCursor.before` to walk
-      // backward. This is the piece praw#614 was actually stuck on.
+      // call's `--after`/`options.after` to walk forward through the
+      // current search's result set, and `nextCursor.before` to walk
+      // backward. This does not extend past Reddit's ~1,000-item search
+      // cap -- see the note above search() for why.
       nextCursor: {
         after: listing.data.after ?? null,
         before: listing.data.before ?? null,
