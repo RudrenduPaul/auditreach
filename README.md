@@ -163,8 +163,10 @@ Search a platform using its official API only.
 | `--before <fullname>`     | page results before this Reddit fullname cursor, e.g. `t3_abc123` (Reddit only) |
 | `--after <fullname>`      | page results after this Reddit fullname cursor, e.g. `t3_abc123` (Reddit only)  |
 | `--output <path>`         | write full results JSON to this path                                            |
+| `--json`                  | print structured JSON to stdout instead of human-readable output, for scripts and agent callers |
 
     node dist/cli.js search --platform reddit --query "agent memory poisoning" --subreddit MachineLearning --max-results 50
+    node dist/cli.js search --platform reddit --query "agent memory poisoning" --json | jq '.results | length'
 
 ### `auditreach auth`
 
@@ -175,6 +177,7 @@ Set up, verify, or clear BYOK credentials for a platform (stored in your OS keyc
 | `--platform <platform>` | `reddit` \| `youtube` (required)                                                                   |
 | `--clear`               | delete stored credentials for this platform                                                        |
 | `--verify`              | verify stored credentials are valid without running a search (no results file, no audit-log entry) |
+| `--json`                | print structured JSON to stdout instead of human-readable output                                   |
 
     node dist/cli.js auth --platform reddit --verify
 
