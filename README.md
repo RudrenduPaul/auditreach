@@ -117,8 +117,6 @@ Every entry in `auditreach.log.jsonl` is hash-chained -- each entry's hash is co
     ✗ Chain broken at entry 3 (ar_2026-07-12_9f3c2a): entry ar_2026-07-12_9f3c2a hash does not
       match its own content -- entry was edited after being written
 
-See `docs/security-review-2026-07-12.md` for how the tamper-detection path was verified.
-
 ## Getting started
 
 **1. Install:** see [Install](#install) above -- `npx auditreach-cli`, `npm install -g auditreach-cli`, or clone and build from source.
@@ -323,7 +321,7 @@ See `CONTRIBUTING.md` for the rules on adding a new platform client -- the short
 
 ## Security
 
-See `SECURITY.md` for the vulnerability disclosure policy and `docs/security-review-2026-07-12.md` for the pre-launch OWASP/STRIDE review (zero CRITICAL/HIGH findings; one moderate, non-directly-reachable supply-chain advisory that has since been resolved -- `npm audit` on this repo currently returns zero vulnerabilities). GitHub secret scanning and push protection are enabled on this repo.
+See `SECURITY.md` for the vulnerability disclosure policy. A pre-launch OWASP/STRIDE review found zero CRITICAL/HIGH findings and one moderate, non-directly-reachable supply-chain advisory that has since been resolved -- `npm audit` on this repo currently returns zero vulnerabilities. GitHub secret scanning and push protection are enabled on this repo.
 
 ## Success stories
 
