@@ -19,6 +19,15 @@ const API_BASE = "https://oauth.reddit.com";
 // https://github.com/praw-dev/praw/issues/1939).
 const LEADING_SUBREDDIT_PREFIX = /^\/?r\//i;
 
+// Strips ASCII control characters -- including the ESC byte (0x1B) that
+// starts an ANSI escape sequence -- before a user-supplied CLI argument is
+// echoed back into a message printed to the terminal.
+// eslint-disable-next-line no-control-regex -- intentional: this IS the control-char check
+const CONTROL_CHARS = /[\x00-\x1F\x7F]/g;
+function stripControlChars(value: string): string {
+  return value.replace(CONTROL_CHARS, "");
+}
+
 interface RedditTokenResponse {
   access_token: string;
   token_type: string;
@@ -108,8 +117,9 @@ export class RedditClient {
    */
   private diagnoseSearchFailure(status: number, subreddit?: string): string {
     if (status === 400 && subreddit && LEADING_SUBREDDIT_PREFIX.test(subreddit)) {
-      const cleaned = subreddit.replace(LEADING_SUBREDDIT_PREFIX, "");
-      return ` Your --subreddit value "${subreddit}" has a leading "r/" or "/r/" prefix -- Reddit's API expects just the subreddit name (try "${cleaned}" instead).`;
+      const safeSubreddit = stripControlChars(subreddit);
+      const cleaned = stripControlChars(subreddit.replace(LEADING_SUBREDDIT_PREFIX, ""));
+      return ` Your --subreddit value "${safeSubreddit}" has a leading "r/" or "/r/" prefix -- Reddit's API expects just the subreddit name (try "${cleaned}" instead).`;
     }
     return "";
   }

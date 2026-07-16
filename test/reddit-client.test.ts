@@ -163,6 +163,37 @@ describe("RedditClient", () => {
     );
   });
 
+  it("strips ANSI/control characters from --subreddit before echoing it in the guidance message", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          access_token: "tok_abc",
+          token_type: "bearer",
+          expires_in: 3600,
+          scope: "*",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ error: "bad request" }, false, 400));
+
+    const client = new RedditClient(credentials);
+    const maliciousSubreddit = "r/\x1b[31mMachineLearning\x1b[0m";
+    let thrown: Error | undefined;
+    try {
+      await client.search({ query: "test", subreddit: maliciousSubreddit });
+    } catch (error) {
+      thrown = error as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    // The raw ESC byte (the part a terminal needs to interpret "[31m" as a
+    // color code) must never reach the thrown message; the literal bracket
+    // text left behind is harmless.
+    expect(thrown?.message).not.toContain("\x1b");
+    expect(thrown?.message).toContain(
+      'Your --subreddit value "r/[31mMachineLearning[0m" has a leading',
+    );
+  });
+
   it("falls back to a generic message for a 400 with no leading r/ prefix on --subreddit", async () => {
     fetchMock
       .mockResolvedValueOnce(
