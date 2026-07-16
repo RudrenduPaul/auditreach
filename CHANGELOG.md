@@ -20,6 +20,6 @@ All notable changes to this project are documented in this file.
 ### Security
 
 - Made the repository public.
-- Enabled branch protection on `main`: pull request + 1 approving review + a passing `ci` status check required before merge, no force-pushes, no branch deletion. See `docs/branch-protection.md`.
+- Enabled branch protection on `main`: pull request + 1 approving review + a passing `ci` status check required before merge, no force-pushes, no branch deletion.
 - SHA-pinned `actions/checkout` and `actions/setup-node` in CI (previously pinned to the floating `v4` tag).
 - Enabled GitHub's native secret scanning, secret scanning push protection, and Dependabot security updates -- none of these turn on automatically just from making a repo public.
