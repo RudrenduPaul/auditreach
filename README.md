@@ -150,17 +150,17 @@ Honest note on setup time: getting your own API credentials from Reddit and Goog
 
 Search a platform using its official API only.
 
-| Flag                      | Description                                                                     |
-| ------------------------- | ------------------------------------------------------------------------------- |
-| `--platform <platform>`   | `reddit` \| `youtube` (required)                                                |
-| `--query <query>`         | search query (required)                                                         |
-| `--subreddit <subreddit>` | restrict search to one subreddit (Reddit only)                                  |
-| `--channel <handle>`      | restrict search to one channel, e.g. `@AnthropicAI` (YouTube only)              |
-| `--since <date>`          | only results published after this date, e.g. `2026-06-01` (YouTube only)        |
-| `--max-results <n>`       | maximum results to return (default: 25; platform caps: 100 Reddit / 50 YouTube) |
-| `--before <fullname>`     | page results before this Reddit fullname cursor, e.g. `t3_abc123` (Reddit only) |
-| `--after <fullname>`      | page results after this Reddit fullname cursor, e.g. `t3_abc123` (Reddit only)  |
-| `--output <path>`         | write full results JSON to this path                                            |
+| Flag                      | Description                                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------------- |
+| `--platform <platform>`   | `reddit` \| `youtube` (required)                                                                |
+| `--query <query>`         | search query (required)                                                                         |
+| `--subreddit <subreddit>` | restrict search to one subreddit (Reddit only)                                                  |
+| `--channel <handle>`      | restrict search to one channel, e.g. `@AnthropicAI` (YouTube only)                              |
+| `--since <date>`          | only results published after this date, e.g. `2026-06-01` (YouTube only)                        |
+| `--max-results <n>`       | maximum results to return (default: 25; platform caps: 100 Reddit / 50 YouTube)                 |
+| `--before <fullname>`     | page results before this Reddit fullname cursor, e.g. `t3_abc123` (Reddit only)                 |
+| `--after <fullname>`      | page results after this Reddit fullname cursor, e.g. `t3_abc123` (Reddit only)                  |
+| `--output <path>`         | write full results JSON to this path                                                            |
 | `--json`                  | print structured JSON to stdout instead of human-readable output, for scripts and agent callers |
 
     node dist/cli.js search --platform reddit --query "agent memory poisoning" --subreddit MachineLearning --max-results 50

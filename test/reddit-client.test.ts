@@ -189,7 +189,9 @@ describe("RedditClient", () => {
     // color code) must never reach the thrown message; the literal bracket
     // text left behind is harmless.
     expect(thrown?.message).not.toContain("\x1b");
-    expect(thrown?.message).toContain('Your --subreddit value "r/[31mMachineLearning[0m" has a leading');
+    expect(thrown?.message).toContain(
+      'Your --subreddit value "r/[31mMachineLearning[0m" has a leading',
+    );
   });
 
   it("falls back to a generic message for a 400 with no leading r/ prefix on --subreddit", async () => {
