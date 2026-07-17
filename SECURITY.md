@@ -6,10 +6,10 @@ TypeScript, repo root) and the PyPI package (`auditreach-cli`, Python,
 
 ## Supported versions
 
-| Package | Version | Supported |
-| --- | --- | --- |
-| `auditreach-cli` (npm) | 0.1.x | Yes |
-| `auditreach-cli` (PyPI) | 0.1.x | Yes |
+| Package                 | Version | Supported |
+| ----------------------- | ------- | --------- |
+| `auditreach-cli` (npm)  | 0.1.x   | Yes       |
+| `auditreach-cli` (PyPI) | 0.1.x   | Yes       |
 
 Both distributions are pre-1.0 and under active development. Security fixes
 land on the latest `0.1.x` release of each; there is no older supported

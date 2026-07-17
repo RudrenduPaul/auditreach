@@ -13,7 +13,11 @@ a language-idiomatic API surface):
   "timestamp": "2026-07-16T14:22:00.000Z",
   "platform": "reddit",
   "endpoint": "GET /r/MachineLearning/search",
-  "query_params": { "query": "agent memory poisoning", "subreddit": "MachineLearning", "limit": 25 },
+  "query_params": {
+    "query": "agent memory poisoning",
+    "subreddit": "MachineLearning",
+    "limit": 25
+  },
   "auth_scope": "OAuth script-app grant, read-only, public-subreddit scope",
   "consent_basis": "Reddit API Terms -- public content, official API, read-only script-app credentials",
   "api_key_fingerprint": "sha256:a1b2c3",
@@ -75,16 +79,16 @@ environment variable.
 falls back to the OS keychain (`keyring` package) when the variable is
 unset.
 
-| Reddit field   | Env var                            | Keychain key             |
-| -------------- | ----------------------------------- | ------------------------- |
-| Client ID      | `AUDITREACH_REDDIT_CLIENT_ID`       | `reddit:clientId`         |
-| Client secret  | `AUDITREACH_REDDIT_CLIENT_SECRET`   | `reddit:clientSecret`     |
-| Username       | `AUDITREACH_REDDIT_USERNAME`        | `reddit:username`         |
-| Password       | `AUDITREACH_REDDIT_PASSWORD`        | `reddit:password`         |
+| Reddit field  | Env var                           | Keychain key          |
+| ------------- | --------------------------------- | --------------------- |
+| Client ID     | `AUDITREACH_REDDIT_CLIENT_ID`     | `reddit:clientId`     |
+| Client secret | `AUDITREACH_REDDIT_CLIENT_SECRET` | `reddit:clientSecret` |
+| Username      | `AUDITREACH_REDDIT_USERNAME`      | `reddit:username`     |
+| Password      | `AUDITREACH_REDDIT_PASSWORD`      | `reddit:password`     |
 
-| YouTube field | Env var                       | Keychain key      |
-| ------------- | ------------------------------ | ------------------ |
-| API key       | `AUDITREACH_YOUTUBE_API_KEY`   | `youtube:apiKey`   |
+| YouTube field | Env var                      | Keychain key     |
+| ------------- | ---------------------------- | ---------------- |
+| API key       | `AUDITREACH_YOUTUBE_API_KEY` | `youtube:apiKey` |
 
 This is a deliberate, documented divergence between the two distributions,
 not an oversight: a headless CI runner or an AI agent's execution sandbox

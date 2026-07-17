@@ -19,7 +19,7 @@ maintained together. See `python/README.md` for Python-specific usage.
   (console script `auditreach`, package `auditreach`), with the same flags
   as the npm CLI.
 - Programmatic library API: `from auditreach import RedditClient,
-  YoutubeClient, get_reddit_credentials, verify_audit_log_chain, ...`.
+YoutubeClient, get_reddit_credentials, verify_audit_log_chain, ...`.
 - Official-API-only clients for Reddit (OAuth2 password grant, direct REST
   via the stdlib `urllib`) and YouTube (Data API v3, called directly over
   REST instead of the `googleapis`/`google-api-python-client` SDK, to keep

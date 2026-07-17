@@ -153,7 +153,7 @@ identical keys.
 | Flag                      | Description                                                                                     |
 | ------------------------- | ----------------------------------------------------------------------------------------------- |
 | `--platform <platform>`   | `reddit` \| `youtube` (required)                                                                |
-| `--query <query>`         | search query                                                                                     |
+| `--query <query>`         | search query                                                                                    |
 | `--subreddit <subreddit>` | restrict search to one subreddit (Reddit only)                                                  |
 | `--channel <handle>`      | restrict search to one channel, e.g. `@AnthropicAI` (YouTube only)                              |
 | `--since <date>`          | only results published after this date, e.g. `2026-06-01` (YouTube only)                        |
@@ -166,18 +166,18 @@ identical keys.
 ### `auditreach auth`
 
 | Flag                    | Description                                                                                        |
-| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
 | `--platform <platform>` | `reddit` \| `youtube` (required)                                                                   |
-| `--clear`                | delete stored credentials for this platform                                                        |
-| `--verify`                | verify stored credentials are valid without running a search (no results file, no audit-log entry) |
-| `--json`                  | print structured JSON to stdout instead of human-readable output                                   |
+| `--clear`               | delete stored credentials for this platform                                                        |
+| `--verify`              | verify stored credentials are valid without running a search (no results file, no audit-log entry) |
+| `--json`                | print structured JSON to stdout instead of human-readable output                                   |
 
 ### `auditreach verify-log`
 
 | Flag            | Description                                                                  |
-| --------------- | ----------------------------------------------------------------------------------- |
+| --------------- | ---------------------------------------------------------------------------- |
 | `--path <path>` | path to the audit log file (defaults to `./auditreach.log.jsonl` if omitted) |
-| `--json`        | print structured JSON instead of human-readable output |
+| `--json`        | print structured JSON instead of human-readable output                       |
 
 Run `auditreach <command> --help` any time to see the exact flags your
 installed version supports.

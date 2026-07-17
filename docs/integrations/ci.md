@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
       - run: npm install -g auditreach-cli
       - run: auditreach verify-log --json
 ```
@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - run: pip install auditreach-cli
       - run: auditreach verify-log --json
 ```
@@ -58,7 +58,7 @@ supply BYOK credentials as repository secrets:
 name: Scheduled research search
 on:
   schedule:
-    - cron: '0 9 * * 1' # every Monday at 09:00 UTC
+    - cron: "0 9 * * 1" # every Monday at 09:00 UTC
 
 jobs:
   search:
@@ -72,7 +72,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - run: pip install auditreach-cli
       - run: auditreach search --platform reddit --query "your query" --json > results.json
       - uses: actions/upload-artifact@v4
