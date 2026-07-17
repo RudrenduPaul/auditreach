@@ -6,6 +6,7 @@ Research Reddit and YouTube from your AI agent using only official APIs, your ow
 
 [![CI](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml/badge.svg)](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/auditreach-cli)](https://www.npmjs.com/package/auditreach-cli)
+[![PyPI version](https://img.shields.io/pypi/v/auditreach-cli.svg)](https://pypi.org/project/auditreach-cli/)
 [![License: Apache 2.0](https://img.shields.io/github/license/RudrenduPaul/auditreach)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
 
@@ -19,6 +20,15 @@ Research Reddit and YouTube from your AI agent using only official APIs, your ow
 
 ## Install
 
+auditreach ships as two independent, equally first-class packages: an npm
+package (this repo, JavaScript/TypeScript) and a
+[PyPI package](https://pypi.org/project/auditreach-cli/) (`python/`,
+Python). Both implement the same hash-chain algorithm and BYOK model
+against the same official Reddit/YouTube APIs. Pick whichever fits your
+toolchain, or install both.
+
+**npm:**
+
 ```sh
 npx auditreach-cli search --platform reddit --query "your query"
 ```
@@ -29,6 +39,18 @@ Or install it globally:
 npm install -g auditreach-cli
 auditreach search --platform reddit --query "your query"
 ```
+
+**pip:**
+
+```sh
+pip install auditreach-cli
+auditreach search --platform reddit --query "your query"
+```
+
+See [python/README.md](python/README.md) for Python-specific usage,
+including this distribution's added env-var BYOK credential path (useful
+for headless CI/agent sandboxes) -- the npm package stores credentials in
+the OS keychain only.
 
 Building from source works the same way, if you want to read or modify the code first:
 
@@ -256,6 +278,8 @@ if (!result.valid) {
 
 No generated API docs site exists yet (no TypeDoc build wired into CI) -- the exports above are the complete public surface. Check `dist/index.d.ts` in the published package for exact types.
 
+The Python package (`auditreach-cli` on PyPI) exposes the same surface with `snake_case` names -- `from auditreach import RedditClient, YoutubeClient, get_reddit_credentials, verify_audit_log_chain, ...` -- see [python/README.md](python/README.md) for the full Python API reference.
+
 ## Platform coverage
 
 | Platform    | API used                                        | Status              | Known constraint                                                                                                                                                                                                                                                                                                                                                                           |
@@ -311,13 +335,22 @@ Nothing about auditreach requires a hosted account or server. Every command runs
 
 ## Development
 
+**TypeScript (this package):**
+
     npm install
     npm run lint          # ESLint
     npm run format        # Prettier check
     npm run typecheck     # tsc --noEmit --strict
     npm run test:coverage # vitest, 66 tests, 95.4% statement coverage
 
-See `CONTRIBUTING.md` for the rules on adding a new platform client -- the short version: official API only, honest rate-limit disclosure, tests that mock the network boundary, never anything that reads or writes a raw credential outside `src/auth/credential-store.ts`.
+**Python (`python/`):**
+
+    cd python
+    python3 -m venv .venv && source .venv/bin/activate
+    pip install -e ".[dev]"
+    pytest                # 82 tests
+
+See `CONTRIBUTING.md` for the rules on adding a new platform client -- the short version: official API only, honest rate-limit disclosure, tests that mock the network boundary, never anything that reads or writes a raw credential outside `src/auth/credential-store.ts` (or `python/src/auditreach/auth/credential_store.py` on the Python side).
 
 ## Security
 
