@@ -1,0 +1,67 @@
+name: Publish to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version being published (must match python/pyproject.toml, e.g. 0.2.0)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Verify pyproject.toml version matches the requested input
+        run: |
+          declared=$(python3 -c "import tomllib; print(tomllib.load(open('python/pyproject.toml','rb'))['project']['version'])")
+          if [ "$declared" != "${{ github.event.inputs.version }}" ]; then
+            echo "::error::pyproject.toml declares $declared, but you requested ${{ github.event.inputs.version }}"
+            exit 1
+          fi
+
+      - name: Build
+        working-directory: python
+        run: |
+          python3 -m pip install --upgrade build
+          python3 -m build
+
+      - name: Sanity-check the built distributions
+        working-directory: python
+        run: |
+          python3 -m pip install --upgrade twine
+          python3 -m twine check dist/*
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pypi-dist
+          path: python/dist/
+
+  # This job requires manual approval in the "pypi-release" GitHub Environment
+  # (Settings -> Environments -> pypi-release -> required reviewers) before it
+  # runs -- that approval click is the staging/approval gate, equivalent to
+  # npm's `npm stage approve`. No PyPI token is stored anywhere: publishing
+  # uses OIDC trusted publishing once the "pypi-release" Trusted Publisher is
+  # registered on the auditreach-cli PyPI project (pypi.org -> Manage ->
+  # Publishing -> Add a new publisher).
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi-release
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        with:
+          name: pypi-dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@7f25271a4aa483500f742f9492b2ab5648d61011 # v1.12.4
