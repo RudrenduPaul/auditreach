@@ -1,0 +1,105 @@
+{
+  "name": "auditreach",
+  "package": "auditreach-cli",
+  "description": "Official-API-only, BYOK (bring your own key) research CLI for Reddit and YouTube with a local, hash-chained, tamper-evident audit log. Built for AI agents and compliance teams that cannot rely on cookie-based scraping or shared credential pools.",
+  "homepage": "https://github.com/RudrenduPaul/auditreach",
+  "repository": "https://github.com/RudrenduPaul/auditreach",
+  "license": "Apache-2.0",
+  "auth": {
+    "model": "byok",
+    "description": "Each user supplies and stores their own platform API credentials in their OS keychain by running `auditreach auth --platform <platform>` once, before any search or MCP tool call. There are no shared or pooled credentials, and no scraping -- every request goes through the platform's own official API (Reddit OAuth2, YouTube Data API v3) under that user's own quota and terms of service.",
+    "setup_command": "auditreach auth --platform <reddit|youtube>",
+    "clear_command": "auditreach auth --platform <reddit|youtube> --clear",
+    "note": "Credential setup and clearing are local-CLI-only, human-driven actions. Neither is exposed as an MCP tool -- an agent can check whether credentials are valid (auth_status) but cannot provision or wipe them."
+  },
+  "mcp": {
+    "protocol": "mcp",
+    "transport": "stdio",
+    "invocation": {
+      "npx": "npx auditreach-cli mcp",
+      "installed": "auditreach mcp"
+    },
+    "tools": [
+      {
+        "name": "search",
+        "description": "Search Reddit or YouTube using the platform's official API only, with the caller's own BYOK credentials. Writes the full results to a local JSON file and appends a hash-chained audit-log entry.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "platform": {
+              "type": "string",
+              "enum": ["reddit", "youtube"],
+              "description": "Platform to search."
+            },
+            "query": {
+              "type": "string",
+              "description": "Search query."
+            },
+            "subreddit": {
+              "type": "string",
+              "description": "Restrict search to one subreddit, e.g. MachineLearning (reddit only)."
+            },
+            "channel": {
+              "type": "string",
+              "description": "Restrict search to one channel, e.g. @AnthropicAI (youtube only)."
+            },
+            "since": {
+              "type": "string",
+              "description": "Only results published after this date, e.g. 2026-06-01 (youtube only)."
+            },
+            "maxResults": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum results to return. Platform caps still apply (see README) -- omit to use the default."
+            },
+            "before": {
+              "type": "string",
+              "description": "Page results before this Reddit fullname cursor, e.g. t3_abc123 (reddit only)."
+            },
+            "after": {
+              "type": "string",
+              "description": "Page results after this Reddit fullname cursor, e.g. t3_abc123 (reddit only)."
+            }
+          },
+          "required": ["platform"]
+        }
+      },
+      {
+        "name": "auth_status",
+        "description": "Read-only check of whether stored BYOK credentials for a platform are currently valid. Equivalent to `auditreach auth --platform <platform> --verify --json`. Cannot set or clear credentials.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "platform": {
+              "type": "string",
+              "enum": ["reddit", "youtube"],
+              "description": "Platform to check."
+            }
+          },
+          "required": ["platform"]
+        }
+      },
+      {
+        "name": "verify_log",
+        "description": "Verify the local hash-chained audit log has not been tampered with. Equivalent to `auditreach verify-log --json`.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the audit log file (defaults to ./auditreach.log.jsonl)."
+            }
+          },
+          "required": []
+        }
+      }
+    ]
+  },
+  "rate_limits": {
+    "note": "Not set or enforced by auditreach itself. Every request goes through the underlying platform's own official API under the calling user's own credentials, so limits are whatever Reddit's and YouTube's own API rate limits and quotas are for that account -- see the platform's own documentation for current numbers."
+  },
+  "cli": {
+    "commands": ["search", "auth", "verify-log", "mcp"],
+    "json_output_flag": "--json"
+  }
+}
