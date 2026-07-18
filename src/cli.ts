@@ -6,6 +6,7 @@ import { Command } from "commander";
 import { runSearchCommand } from "./commands/search.js";
 import { runAuthCommand } from "./commands/auth.js";
 import { runVerifyLogCommand } from "./commands/verify-log.js";
+import { runMcpServerCommand } from "./commands/mcp.js";
 import type { Platform } from "./types.js";
 import {
   DEFAULT_LIMIT as REDDIT_DEFAULT_LIMIT,
@@ -119,6 +120,16 @@ program
   )
   .action(async (opts) => {
     await runVerifyLogCommand({ path: opts.path, json: opts.json });
+  });
+
+program
+  .command("mcp")
+  .description(
+    "Run a Model Context Protocol server over stdio, exposing search, auth_status, and " +
+      "verify_log as tools for AI agents (see .well-known/agent.json for the full manifest)",
+  )
+  .action(async () => {
+    await runMcpServerCommand({ version: VERSION });
   });
 
 program.parseAsync(process.argv).catch((error: unknown) => {

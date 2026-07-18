@@ -6,6 +6,14 @@ JS/TS) and the PyPI package (`auditreach-cli`, Python) -- since they
 implement the same hash-chain algorithm and BYOK model; entries note which
 distribution they apply to.
 
+## [0.2.0] - 2026-07-18 (npm)
+
+### Added
+
+- `auditreach mcp` -- runs a real Model Context Protocol server over stdio (built on `@modelcontextprotocol/sdk`, not a hand-rolled JSON-RPC layer), exposing exactly 3 tools so an AI agent can call this CLI without shelling out and parsing stdout: `search` (same parameters as `auditreach search`: platform, query, subreddit/channel, since, maxResults, before/after), `auth_status` (read-only credential check, equivalent to `auditreach auth --verify --json`), and `verify_log` (equivalent to `auditreach verify-log --json`). All 3 tools call the same programmatic core the CLI commands use (`executeSearch`, `checkAuthStatus`, `executeVerifyLog`, newly extracted and exported from `src/index.ts`) -- no search/auth/audit-log logic is duplicated for MCP.
+- `auth_status` is deliberately read-only: there is no MCP tool to set or clear BYOK credentials. Provisioning (`auditreach auth --platform <platform>`) and clearing (`--clear`) stay local-CLI-only, human-driven actions.
+- `.well-known/agent.json` -- an agent-discovery manifest at the repo root, shipped in the published npm package, describing the BYOK auth requirement, the 3 MCP tools with their real parameter schemas, the `mcp`/`stdio` protocol, and both `npx auditreach-cli mcp` and `auditreach mcp` invocation forms. Rate limits are intentionally not stated as a number -- the manifest notes they're inherited from Reddit's/YouTube's own official API limits, not measured or claimed by this package.
+
 ## [Python 0.1.0] - 2026-07-17
 
 Initial public release of the Python port, published to PyPI as

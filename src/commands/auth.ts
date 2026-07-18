@@ -67,46 +67,67 @@ async function clearCredentials(platform: Platform): Promise<void> {
   console.log(`Cleared stored credentials for ${platform}.`);
 }
 
+export interface AuthStatusResult {
+  platform: Platform;
+  valid: boolean;
+  error: string | null;
+}
+
 /**
- * Standalone credential check for `auditreach auth --verify`. Reuses each
- * client's token-fetch/auth-check logic (never duplicates it) and performs
- * a single minimal authenticated request. Unlike `search`, this never
- * requires --query, never writes a results file, and never appends an
- * audit-log entry -- it only reports whether the stored credentials work.
+ * The programmatic core behind `auditreach auth --verify`, and the only
+ * auth-related logic exposed over MCP (as the read-only `auth_status`
+ * tool). Reuses each client's token-fetch/auth-check logic (never
+ * duplicates it) and performs a single minimal authenticated request.
+ * Unlike `search`, this never requires --query, never writes a results
+ * file, and never appends an audit-log entry -- it only reports whether the
+ * stored credentials work. Deliberately has no counterpart for setting or
+ * clearing credentials: that stays a local-CLI-only, human-driven action
+ * (`auditreach auth --platform <p>` / `--clear`), never reachable from an
+ * MCP tool call.
  */
-async function verifyCredentials(platform: Platform, json: boolean): Promise<void> {
+export async function checkAuthStatus(platform: Platform): Promise<AuthStatusResult> {
   try {
     if (platform === "reddit") {
       const credentials = getRedditCredentials();
       if (!credentials) {
-        report(
-          json,
+        return {
           platform,
-          false,
-          'No Reddit credentials found. Run "auditreach auth --platform reddit" first.',
-        );
-        process.exitCode = 1;
-        return;
+          valid: false,
+          error: 'No Reddit credentials found. Run "auditreach auth --platform reddit" first.',
+        };
       }
       await new RedditClient(credentials).verifyCredentials();
     } else {
       const credentials = getYoutubeCredentials();
       if (!credentials) {
-        report(
-          json,
+        return {
           platform,
-          false,
-          'No YouTube credentials found. Run "auditreach auth --platform youtube" first.',
-        );
-        process.exitCode = 1;
-        return;
+          valid: false,
+          error: 'No YouTube credentials found. Run "auditreach auth --platform youtube" first.',
+        };
       }
       await new YoutubeClient(credentials).verifyCredentials();
     }
-    report(json, platform, true);
+    return { platform, valid: true, error: null };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    report(json, platform, false, `${capitalize(platform)} credential check failed: ${message}`);
+    return {
+      platform,
+      valid: false,
+      error: `${capitalize(platform)} credential check failed: ${message}`,
+    };
+  }
+}
+
+/**
+ * CLI wrapper around `checkAuthStatus` for `auditreach auth --verify`: adds
+ * human-readable / `--json` printing and the exit-code convention the rest
+ * of the CLI uses.
+ */
+async function verifyCredentials(platform: Platform, json: boolean): Promise<void> {
+  const result = await checkAuthStatus(platform);
+  report(json, result.platform, result.valid, result.error ?? undefined);
+  if (!result.valid) {
     process.exitCode = 1;
   }
 }

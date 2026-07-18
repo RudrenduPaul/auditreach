@@ -22,21 +22,41 @@ export interface SearchCommandArgs {
   json?: boolean;
 }
 
-export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
+/** Raised for expected, user-actionable failures (missing credentials, missing --query). Callers translate this into their own reporting: `runSearchCommand` prints to stderr and sets `process.exitCode`, the MCP `search` tool returns it as a structured tool error. */
+export class SearchCommandError extends Error {}
+
+export interface SearchExecutionResult {
+  outcome: SearchOutcome;
+  truncated: boolean;
+  auditLogEntryId: string;
+  resultsFile: string;
+  auditLogFile: string;
+}
+
+/**
+ * The programmatic core of `search`: runs the platform search, writes the
+ * full results file, and appends the hash-chained audit-log entry. Contains
+ * no console/stdout output of its own, so it is safe to call from contexts
+ * that must not write to stdout outside a controlled protocol -- notably
+ * the MCP `search` tool, which shares stdout with the JSON-RPC transport.
+ * `runSearchCommand` below is the CLI wrapper that adds human-readable and
+ * `--json` printing on top of this.
+ */
+export async function executeSearch(
+  args: Omit<SearchCommandArgs, "json">,
+): Promise<SearchExecutionResult> {
   let outcome: SearchOutcome;
   let fingerprintSource: string;
 
   if (args.platform === "reddit") {
     const credentials = getRedditCredentials();
     if (!credentials) {
-      console.error('No Reddit credentials found. Run "auditreach auth --platform reddit" first.');
-      process.exitCode = 1;
-      return;
+      throw new SearchCommandError(
+        'No Reddit credentials found. Run "auditreach auth --platform reddit" first.',
+      );
     }
     if (!args.query) {
-      console.error('Reddit search requires --query "<search terms>".');
-      process.exitCode = 1;
-      return;
+      throw new SearchCommandError('Reddit search requires --query "<search terms>".');
     }
     const client = new RedditClient(credentials);
     outcome = await client.search({
@@ -50,11 +70,9 @@ export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
   } else {
     const credentials = getYoutubeCredentials();
     if (!credentials) {
-      console.error(
+      throw new SearchCommandError(
         'No YouTube credentials found. Run "auditreach auth --platform youtube" first.',
       );
-      process.exitCode = 1;
-      return;
     }
     const client = new YoutubeClient(credentials);
     outcome = await client.search({
@@ -64,10 +82,6 @@ export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
       maxResults: args.maxResults,
     });
     fingerprintSource = credentials.apiKey;
-  }
-
-  if (!args.json) {
-    printResults(outcome);
   }
 
   const outputPath = args.output ?? defaultOutputPath();
@@ -87,6 +101,34 @@ export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
     prev_entry_hash: prevHash,
   });
 
+  return {
+    outcome,
+    truncated: isTruncated(outcome),
+    auditLogEntryId: entry.entry_id,
+    resultsFile: outputPath,
+    auditLogFile: "./auditreach.log.jsonl",
+  };
+}
+
+export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
+  let result: SearchExecutionResult;
+  try {
+    result = await executeSearch(args);
+  } catch (error) {
+    if (error instanceof SearchCommandError) {
+      console.error(error.message);
+      process.exitCode = 1;
+      return;
+    }
+    throw error;
+  }
+
+  const { outcome, truncated, auditLogEntryId, resultsFile, auditLogFile } = result;
+
+  if (!args.json) {
+    printResults(outcome);
+  }
+
   if (args.json) {
     process.stdout.write(
       `${JSON.stringify(
@@ -98,10 +140,10 @@ export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
           consentBasis: outcome.consentBasis,
           items: outcome.items,
           nextCursor: outcome.nextCursor ?? null,
-          truncated: isTruncated(outcome),
-          auditLogEntryId: entry.entry_id,
-          resultsFile: outputPath,
-          auditLogFile: "./auditreach.log.jsonl",
+          truncated,
+          auditLogEntryId,
+          resultsFile,
+          auditLogFile,
         },
         null,
         2,
@@ -110,10 +152,10 @@ export async function runSearchCommand(args: SearchCommandArgs): Promise<void> {
     return;
   }
 
-  console.log(`\nAudit log entry written: ${entry.entry_id}`);
-  console.log(`Consent basis: ${entry.consent_basis}`);
-  console.log(`Full results: ${outputPath}`);
-  console.log(`Full audit trail: ./auditreach.log.jsonl`);
+  console.log(`\nAudit log entry written: ${auditLogEntryId}`);
+  console.log(`Consent basis: ${outcome.consentBasis}`);
+  console.log(`Full results: ${resultsFile}`);
+  console.log(`Full audit trail: ${auditLogFile}`);
 }
 
 function defaultOutputPath(): string {
