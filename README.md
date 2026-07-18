@@ -166,7 +166,7 @@ Honest note on setup time: getting your own API credentials from Reddit and Goog
 
 ## Commands
 
-`auditreach` has three subcommands. Every flag below is pulled directly from the CLI's own `--help` output, not from memory of what it used to support.
+`auditreach` has four subcommands. Every flag below is pulled directly from the CLI's own `--help` output, not from memory of what it used to support.
 
 ### `auditreach search`
 
@@ -211,6 +211,21 @@ Verify the local hash-chained audit log has not been tampered with.
 
     node dist/cli.js verify-log --path ./auditreach.log.jsonl
 
+### `auditreach mcp`
+
+Run a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio (built on the official `@modelcontextprotocol/sdk`), exposing exactly 3 tools so an AI agent can call this CLI directly instead of shelling out and parsing stdout:
+
+| Tool          | Equivalent to                                    | Notes                                                                                  |
+| ------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `search`      | `auditreach search --json`                       | Same parameters: platform, query, subreddit/channel, since, maxResults, before/after   |
+| `auth_status` | `auditreach auth --platform <p> --verify --json` | **Read-only.** Checks whether stored credentials are valid -- cannot set or clear them |
+| `verify_log`  | `auditreach verify-log --json`                   | Same parameters: path                                                                  |
+
+    node dist/cli.js mcp
+    # or, once published: npx auditreach-cli mcp
+
+Setting up or clearing BYOK credentials (`auditreach auth --platform <p>` / `--clear`) is deliberately **not** exposed over MCP -- that stays a local-CLI-only, human-driven action, so a calling agent can check whether credentials work but can never provision or wipe them itself. See [`.well-known/agent.json`](.well-known/agent.json) for the machine-readable manifest (auth requirements, tool schemas, invocation commands) that an agent or agent registry can read to discover this server without a human reading the README first.
+
 Run `auditreach <command> --help` any time to see the exact flags your installed version supports.
 
 ## Library API reference
@@ -234,6 +249,11 @@ import {
   canonicalJson,
   sha256Hex,
   DEFAULT_AUDIT_LOG_PATH,
+  executeSearch,
+  checkAuthStatus,
+  executeVerifyLog,
+  buildMcpServer,
+  runMcpServerCommand,
 } from "auditreach-cli";
 ```
 
@@ -275,6 +295,12 @@ if (!result.valid) {
 - `canonicalJson(value: unknown): string` -- recursively sorts object keys so the same logical entry always serializes to the same bytes, which the hash chain depends on to verify deterministically.
 - `sha256Hex(input: string): string`
 - `credentialFingerprint(secret: string): string` -- keeps only the last 6 hex characters of the hash, enough to distinguish rotated keys in a local audit log, never enough to be a partial credential leak.
+
+**Command cores and MCP**
+
+- `executeSearch(args)`, `checkAuthStatus(platform)`, `executeVerifyLog(path?)` -- the same programmatic cores the `search` / `auth --verify` / `verify-log` CLI commands and the MCP tools both call into; none of them write to console/stdout, so they're safe to call from any host, including one sharing stdout with an MCP transport.
+- `buildMcpServer({ version }): McpServer` -- constructs the MCP server (from `@modelcontextprotocol/sdk`) with the `search` / `auth_status` / `verify_log` tools registered, without starting a transport -- useful for testing or embedding in a larger MCP server.
+- `runMcpServerCommand({ version })` -- what `auditreach mcp` runs: builds the server and connects it over stdio. Never returns while the server is running.
 
 No generated API docs site exists yet (no TypeDoc build wired into CI) -- the exports above are the complete public surface. Check `dist/index.d.ts` in the published package for exact types.
 

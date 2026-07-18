@@ -6,31 +6,38 @@ JS/TS) and the PyPI package (`auditreach-cli`, Python) -- since they
 implement the same hash-chain algorithm and BYOK model; entries note which
 distribution they apply to.
 
-## [Python 0.2.0] - 2026-07-18
+## [0.2.0] - 2026-07-18 (npm + Python)
 
-Brings the Python (PyPI) distribution to feature parity with the npm
-distribution's `mcp` subcommand, plus a shared agent-discovery manifest at
-the repo root. This is a minor version bump (not a patch) because it adds
-a new runtime dependency (`mcp`) and raises the minimum supported Python
-version.
+Both distributions add an `mcp` subcommand and a shared `.well-known/agent.json`
+discovery manifest at the repo root, unified across npm and PyPI in the same file
+(the manifest lists both `npx auditreach-cli mcp` and `pipx run auditreach-cli mcp` /
+`auditreach mcp` invocation forms). This is a minor version bump on both
+distributions -- npm adds `@modelcontextprotocol/sdk` and `zod` as new runtime
+dependencies; Python adds `mcp` and raises its minimum supported version.
 
-### Added
+### Added (npm)
 
-- `auditreach mcp` -- runs an [MCP](https://modelcontextprotocol.io)
-  (Model Context Protocol) server over stdio, built on the official MCP
-  Python SDK (PyPI package `mcp`), exposing 3 tools that call straight
-  through to the existing command logic rather than reimplementing it:
-  `search` (same parameters as `auditreach search`), `auth_status`
-  (read-only equivalent of `auditreach auth --platform <p> --verify
---json` -- deliberately cannot set or clear credentials), and
-  `verify_log` (same as `auditreach verify-log --json`).
-- `.well-known/agent.json` -- a repo-root discovery manifest describing
-  auditreach's name, BYOK auth requirement, MCP transport (stdio),
-  invocation commands for both distributions, and the 3 exposed tools'
-  parameter schemas, so an agent (or a registry that indexes them) can
-  discover and configure the server without reading source.
+- `auditreach mcp` -- runs a real Model Context Protocol server over stdio (built on `@modelcontextprotocol/sdk`, not a hand-rolled JSON-RPC layer), exposing exactly 3 tools so an AI agent can call this CLI without shelling out and parsing stdout: `search` (same parameters as `auditreach search`: platform, query, subreddit/channel, since, maxResults, before/after), `auth_status` (read-only credential check, equivalent to `auditreach auth --verify --json`), and `verify_log` (equivalent to `auditreach verify-log --json`). All 3 tools call the same programmatic core the CLI commands use (`executeSearch`, `checkAuthStatus`, `executeVerifyLog`, newly extracted and exported from `src/index.ts`) -- no search/auth/audit-log logic is duplicated for MCP.
+- `auth_status` is deliberately read-only: there is no MCP tool to set or clear BYOK credentials. Provisioning (`auditreach auth --platform <platform>`) and clearing (`--clear`) stay local-CLI-only, human-driven actions.
 
-### Changed
+### Added (Python)
+
+- `auditreach mcp` -- the same MCP server and 3 tools as the npm distribution, built
+  on the official MCP Python SDK (PyPI package `mcp`), calling straight through to
+  the existing `run_*_command` functions rather than reimplementing their logic.
+  `auth_status` carries the same read-only guarantee as the npm side.
+
+### Added (shared)
+
+- `.well-known/agent.json` -- one discovery manifest at the repo root, shipped in
+  both the published npm and PyPI packages, describing the BYOK auth requirement,
+  the 3 MCP tools with their real parameter schemas, the `mcp`/`stdio` protocol,
+  and invocation forms for both distributions (`npx auditreach-cli mcp`,
+  `auditreach mcp`, `pipx run auditreach-cli mcp`). Rate limits are intentionally
+  not stated as a number -- the manifest notes they're inherited from Reddit's/
+  YouTube's own official API limits, not measured or claimed by this package.
+
+### Changed (Python)
 
 - Minimum supported Python version raised from 3.9 to 3.10, since the
   official `mcp` SDK itself requires Python >=3.10 (Python 3.9 reached

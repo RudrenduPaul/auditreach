@@ -3,17 +3,33 @@
   "schemaVersion": "1.0",
   "name": "auditreach",
   "displayName": "AuditReach",
-  "description": "Official-API-only, BYOK research CLI and MCP server for Reddit and YouTube, backed by a local, tamper-evident, hash-chained audit log. Every search records which platform, which endpoint, which auth scope, and the consent/ToS basis for that specific call -- built for AI agents and compliance teams that can't rely on cookie-based scraping or shared credential pools.",
+  "package": "auditreach-cli",
+  "description": "Official-API-only, BYOK research CLI and MCP server for Reddit and YouTube, backed by a local, tamper-evident, hash-chained audit log. Every search records which platform, which endpoint, which auth scope, and the consent/ToS basis for that specific call -- built for AI agents and compliance teams that can't rely on cookie-based scraping or shared credential pools. Shipped as two independently maintained, feature-equivalent distributions: an npm package (TypeScript) and a PyPI package (Python).",
   "homepage": "https://github.com/RudrenduPaul/auditreach",
   "repository": "https://github.com/RudrenduPaul/auditreach",
   "license": "Apache-2.0",
   "auth": {
     "type": "byok",
-    "description": "Bring your own API keys for each platform you want to search (a Reddit OAuth2 script-app client ID/secret/username/password, and/or a YouTube Data API v3 key). Credentials are never shared or proxied through a third-party service; they are stored locally (OS keychain by default) and used only for direct, official-API calls made by the caller's own process. Credentials must be configured locally, ahead of time, via the CLI's `auth` subcommand -- the MCP server exposes a read-only status check only and cannot set up or clear credentials itself."
+    "description": "Bring your own API keys for each platform you want to search (a Reddit OAuth2 script-app client ID/secret/username/password, and/or a YouTube Data API v3 key). Credentials are never shared or proxied through a third-party service; they are stored locally (OS keychain by default) and used only for direct, official-API calls made by the caller's own process. Credentials must be configured locally, ahead of time, via the CLI's `auth` subcommand -- the MCP server exposes a read-only status check only and cannot set up or clear credentials itself.",
+    "setup_command": "auditreach auth --platform <reddit|youtube>",
+    "clear_command": "auditreach auth --platform <reddit|youtube> --clear",
+    "note": "Credential setup and clearing are local-CLI-only, human-driven actions on both distributions. Neither is exposed as an MCP tool -- an agent can check whether credentials are valid (auth_status) but cannot provision or wipe them."
   },
   "protocol": "mcp",
   "transport": "stdio",
   "invocation": [
+    {
+      "distribution": "npm",
+      "package": "auditreach-cli",
+      "command": "npx auditreach-cli mcp",
+      "description": "Run the MCP server once without a persistent install."
+    },
+    {
+      "distribution": "npm",
+      "package": "auditreach-cli",
+      "command": "auditreach mcp",
+      "description": "Run the MCP server after `npm install -g auditreach-cli`."
+    },
     {
       "distribution": "pypi",
       "package": "auditreach-cli",
@@ -31,6 +47,7 @@
     {
       "name": "search",
       "description": "Search Reddit or YouTube using its official API only, with your own BYOK credentials. Writes a results file and appends a hash-chained audit-log entry on success, same as the CLI's `search` command.",
+      "note": "Parameter names follow each distribution's own language convention: camelCase (e.g. maxResults) on the npm/TypeScript build, snake_case (e.g. max_results) on the PyPI/Python build. Semantics are identical; run `auditreach mcp` and list tools, or see each package's README, for the exact parameter names on the distribution you're using.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -41,7 +58,7 @@
           },
           "query": {
             "type": ["string", "null"],
-            "description": "Search query. Required for Reddit; optional for YouTube if `channel` is given."
+            "description": "Search query. Required for Reddit; optional for YouTube if a channel is given."
           },
           "subreddit": {
             "type": ["string", "null"],
@@ -55,9 +72,9 @@
             "type": ["string", "null"],
             "description": "Only results published after this date, e.g. \"2026-06-01\" (YouTube only)."
           },
-          "max_results": {
+          "maxResults": {
             "type": ["integer", "null"],
-            "description": "Maximum results to return. Platform-specific caps apply; see the CLI's --help for the current default and caps."
+            "description": "Maximum results to return (max_results on the Python build). Platform-specific caps apply; see the CLI's --help for the current default and caps."
           },
           "before": {
             "type": ["string", "null"],
@@ -104,5 +121,12 @@
         "required": []
       }
     }
-  ]
+  ],
+  "rate_limits": {
+    "note": "Not set or enforced by auditreach itself, on either distribution. Every request goes through the underlying platform's own official API under the calling user's own credentials, so limits are whatever Reddit's and YouTube's own API rate limits and quotas are for that account -- see the platform's own documentation for current numbers."
+  },
+  "cli": {
+    "commands": ["search", "auth", "verify-log", "mcp"],
+    "json_output_flag": "--json"
+  }
 }
