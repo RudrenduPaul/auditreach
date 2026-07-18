@@ -3,7 +3,7 @@ set and its assertPlatform()/positive-integer validation behavior."""
 import pytest
 
 from auditreach import __version__
-from auditreach.cli import run_cli
+from auditreach.cli import build_parser, run_cli
 
 
 def test_version_flag_prints_the_package_version(capsys):
@@ -53,3 +53,15 @@ def test_auth_requires_platform_flag():
     with pytest.raises(SystemExit) as exc_info:
         run_cli(["auditreach", "auth"])
     assert exc_info.value.code == 2
+
+
+def test_parser_recognizes_the_mcp_subcommand():
+    """
+    Only exercises argument parsing, not `run_cli` -- dispatching "mcp"
+    through `run_cli` starts a real stdio MCP server that blocks waiting
+    for a client, which would hang the test suite. The server's own tool
+    logic is covered by test_mcp_command.py.
+    """
+    args = build_parser().parse_args(["mcp"])
+    assert args.command == "mcp"
+

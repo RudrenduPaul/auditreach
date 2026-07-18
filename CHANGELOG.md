@@ -6,6 +6,36 @@ JS/TS) and the PyPI package (`auditreach-cli`, Python) -- since they
 implement the same hash-chain algorithm and BYOK model; entries note which
 distribution they apply to.
 
+## [Python 0.2.0] - 2026-07-18
+
+Brings the Python (PyPI) distribution to feature parity with the npm
+distribution's `mcp` subcommand, plus a shared agent-discovery manifest at
+the repo root. This is a minor version bump (not a patch) because it adds
+a new runtime dependency (`mcp`) and raises the minimum supported Python
+version.
+
+### Added
+
+- `auditreach mcp` -- runs an [MCP](https://modelcontextprotocol.io)
+  (Model Context Protocol) server over stdio, built on the official MCP
+  Python SDK (PyPI package `mcp`), exposing 3 tools that call straight
+  through to the existing command logic rather than reimplementing it:
+  `search` (same parameters as `auditreach search`), `auth_status`
+  (read-only equivalent of `auditreach auth --platform <p> --verify
+  --json` -- deliberately cannot set or clear credentials), and
+  `verify_log` (same as `auditreach verify-log --json`).
+- `.well-known/agent.json` -- a repo-root discovery manifest describing
+  auditreach's name, BYOK auth requirement, MCP transport (stdio),
+  invocation commands for both distributions, and the 3 exposed tools'
+  parameter schemas, so an agent (or a registry that indexes them) can
+  discover and configure the server without reading source.
+
+### Changed
+
+- Minimum supported Python version raised from 3.9 to 3.10, since the
+  official `mcp` SDK itself requires Python >=3.10 (Python 3.9 reached
+  end of life in October 2025).
+
 ## [Python 0.1.0] - 2026-07-17
 
 Initial public release of the Python port, published to PyPI as

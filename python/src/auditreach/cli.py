@@ -18,6 +18,7 @@ from .clients.reddit_client import DEFAULT_LIMIT as REDDIT_DEFAULT_LIMIT
 from .clients.reddit_client import MAX_LIMIT as REDDIT_MAX_LIMIT
 from .clients.youtube_client import MAX_MAX_RESULTS as YOUTUBE_MAX_MAX_RESULTS
 from .commands.auth import run_auth_command
+from .commands.mcp import run_mcp_command
 from .commands.search import run_search_command
 from .commands.verify_log import run_verify_log_command
 
@@ -122,6 +123,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="print a structured JSON result instead of human-readable text (for scripts and agents)",
     )
 
+    subparsers.add_parser(
+        "mcp",
+        help=(
+            "Run an MCP (Model Context Protocol) server over stdio, exposing "
+            "search / auth_status / verify_log as agent-callable tools"
+        ),
+    )
+
     return parser
 
 
@@ -160,6 +169,9 @@ def run_cli(argv: List[str]) -> int:
 
     if args.command == "verify-log":
         return run_verify_log_command(path=args.path, json_output=args.json)
+
+    if args.command == "mcp":
+        return run_mcp_command()
 
     parser.print_help()
     return 0
