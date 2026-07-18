@@ -4,24 +4,23 @@ build-backend = "hatchling.build"
 
 [project]
 name = "auditreach-cli"
-version = "0.1.0"
-description = "Official-API-only, BYOK CLI for researching Reddit and YouTube with your own API keys and a tamper-evident, hash-chained audit log."
+version = "0.2.0"
+description = "Official-API-only, BYOK CLI for researching Reddit and YouTube with your own API keys and a tamper-evident, hash-chained audit log. Includes an MCP server for agent-native use."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [
   { name = "Rudrendu Paul" },
   { name = "Sourav Nandy" },
 ]
-keywords = ["cli", "byok", "compliance", "audit-log", "reddit-api", "youtube-api", "ai-agents", "research", "oauth2", "developer-tools", "security", "api-client"]
+keywords = ["cli", "byok", "compliance", "audit-log", "reddit-api", "youtube-api", "ai-agents", "research", "oauth2", "developer-tools", "security", "api-client", "mcp", "model-context-protocol"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Environment :: Console",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -32,6 +31,7 @@ classifiers = [
 ]
 dependencies = [
   "keyring>=24,<26",
+  "mcp>=1.0,<2",
 ]
 
 [project.optional-dependencies]

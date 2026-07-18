@@ -6,13 +6,42 @@ JS/TS) and the PyPI package (`auditreach-cli`, Python) -- since they
 implement the same hash-chain algorithm and BYOK model; entries note which
 distribution they apply to.
 
-## [0.2.0] - 2026-07-18 (npm)
+## [0.2.0] - 2026-07-18 (npm + Python)
 
-### Added
+Both distributions add an `mcp` subcommand and a shared `.well-known/agent.json`
+discovery manifest at the repo root, unified across npm and PyPI in the same file
+(the manifest lists both `npx auditreach-cli mcp` and `pipx run auditreach-cli mcp` /
+`auditreach mcp` invocation forms). This is a minor version bump on both
+distributions -- npm adds `@modelcontextprotocol/sdk` and `zod` as new runtime
+dependencies; Python adds `mcp` and raises its minimum supported version.
+
+### Added (npm)
 
 - `auditreach mcp` -- runs a real Model Context Protocol server over stdio (built on `@modelcontextprotocol/sdk`, not a hand-rolled JSON-RPC layer), exposing exactly 3 tools so an AI agent can call this CLI without shelling out and parsing stdout: `search` (same parameters as `auditreach search`: platform, query, subreddit/channel, since, maxResults, before/after), `auth_status` (read-only credential check, equivalent to `auditreach auth --verify --json`), and `verify_log` (equivalent to `auditreach verify-log --json`). All 3 tools call the same programmatic core the CLI commands use (`executeSearch`, `checkAuthStatus`, `executeVerifyLog`, newly extracted and exported from `src/index.ts`) -- no search/auth/audit-log logic is duplicated for MCP.
 - `auth_status` is deliberately read-only: there is no MCP tool to set or clear BYOK credentials. Provisioning (`auditreach auth --platform <platform>`) and clearing (`--clear`) stay local-CLI-only, human-driven actions.
-- `.well-known/agent.json` -- an agent-discovery manifest at the repo root, shipped in the published npm package, describing the BYOK auth requirement, the 3 MCP tools with their real parameter schemas, the `mcp`/`stdio` protocol, and both `npx auditreach-cli mcp` and `auditreach mcp` invocation forms. Rate limits are intentionally not stated as a number -- the manifest notes they're inherited from Reddit's/YouTube's own official API limits, not measured or claimed by this package.
+
+### Added (Python)
+
+- `auditreach mcp` -- the same MCP server and 3 tools as the npm distribution, built
+  on the official MCP Python SDK (PyPI package `mcp`), calling straight through to
+  the existing `run_*_command` functions rather than reimplementing their logic.
+  `auth_status` carries the same read-only guarantee as the npm side.
+
+### Added (shared)
+
+- `.well-known/agent.json` -- one discovery manifest at the repo root, shipped in
+  both the published npm and PyPI packages, describing the BYOK auth requirement,
+  the 3 MCP tools with their real parameter schemas, the `mcp`/`stdio` protocol,
+  and invocation forms for both distributions (`npx auditreach-cli mcp`,
+  `auditreach mcp`, `pipx run auditreach-cli mcp`). Rate limits are intentionally
+  not stated as a number -- the manifest notes they're inherited from Reddit's/
+  YouTube's own official API limits, not measured or claimed by this package.
+
+### Changed (Python)
+
+- Minimum supported Python version raised from 3.9 to 3.10, since the
+  official `mcp` SDK itself requires Python >=3.10 (Python 3.9 reached
+  end of life in October 2025).
 
 ## [Python 0.1.0] - 2026-07-17
 

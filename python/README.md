@@ -146,7 +146,7 @@ identical keys.
 
 ## Commands
 
-`auditreach` has three subcommands, matching the npm CLI's flags exactly.
+`auditreach` has four subcommands, matching the npm CLI's flags exactly.
 
 ### `auditreach search`
 
@@ -179,6 +179,39 @@ identical keys.
 | `--path <path>` | path to the audit log file (defaults to `./auditreach.log.jsonl` if omitted) |
 | `--json`        | print structured JSON instead of human-readable output                       |
 
+### `auditreach mcp`
+
+Runs an [MCP](https://modelcontextprotocol.io) (Model Context Protocol)
+server over stdio, exposing 3 tools that reuse the exact same command logic
+as the CLI above -- no reimplementation, no drift:
+
+| Tool          | Equivalent to                                                |
+| ------------- | ------------------------------------------------------------ |
+| `search`      | `auditreach search --json`                                   |
+| `auth_status` | `auditreach auth --platform <p> --verify --json` (read-only) |
+| `verify_log`  | `auditreach verify-log --json`                               |
+
+`auth_status` is deliberately read-only: it can check whether credentials
+are already stored and valid, but it can never set or clear them. Setting
+up or clearing BYOK credentials stays a local-CLI-only, human-driven
+action via `auditreach auth` -- never exposed over MCP.
+
+Point any MCP-compatible client (Claude Desktop, Claude Code, etc.) at:
+
+```bash
+auditreach mcp
+```
+
+or, without a global install:
+
+```bash
+pipx run auditreach-cli mcp
+```
+
+See [`.well-known/agent.json`](https://github.com/RudrenduPaul/auditreach/blob/main/.well-known/agent.json)
+at the repo root for the machine-readable discovery manifest (tool schemas,
+transport, invocation commands).
+
 Run `auditreach <command> --help` any time to see the exact flags your
 installed version supports.
 
@@ -207,8 +240,10 @@ via the stdlib `urllib` instead of a third-party HTTP library) and YouTube
 Google's full `google-api-python-client` SDK and its own dependency chain)
 are shipped. X (Twitter) is not yet shipped in either distribution -- see
 the [project README](https://github.com/RudrenduPaul/auditreach#platform-coverage)
-for why. `auditreach-cli`'s only runtime dependency is
-[`keyring`](https://pypi.org/project/keyring/).
+for why. `auditreach-cli`'s runtime dependencies are
+[`keyring`](https://pypi.org/project/keyring/) and the official
+[`mcp`](https://pypi.org/project/mcp/) Python SDK (used only by the
+`auditreach mcp` subcommand).
 
 ## Security
 

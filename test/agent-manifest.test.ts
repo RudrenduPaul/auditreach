@@ -11,17 +11,15 @@ interface AgentManifest {
   name: string;
   description: string;
   auth: {
-    model: string;
+    type: string;
     description: string;
     setup_command: string;
     clear_command: string;
   };
-  mcp: {
-    protocol: string;
-    transport: string;
-    invocation: Record<string, string>;
-    tools: Array<{ name: string; description: string; parameters: unknown }>;
-  };
+  protocol: string;
+  transport: string;
+  invocation: Array<{ distribution: string; package: string; command: string }>;
+  tools: Array<{ name: string; description: string; inputSchema: unknown }>;
   rate_limits: Record<string, unknown>;
 }
 
@@ -35,33 +33,37 @@ describe(".well-known/agent.json", () => {
 
   it("declares the BYOK auth requirement and the CLI commands to set up / clear credentials", async () => {
     const manifest = (await readJson("../.well-known/agent.json")) as AgentManifest;
-    expect(manifest.auth.model).toBe("byok");
+    expect(manifest.auth.type).toBe("byok");
     expect(manifest.auth.setup_command).toContain("auditreach auth --platform");
     expect(manifest.auth.clear_command).toContain("--clear");
     expect(manifest.auth.description.toLowerCase()).not.toContain("shared credential");
   });
 
-  it("declares protocol mcp over stdio, with real npx/installed invocation commands", async () => {
+  it("declares protocol mcp over stdio, with real invocation commands for both distributions", async () => {
     const manifest = (await readJson("../.well-known/agent.json")) as AgentManifest;
-    expect(manifest.mcp.protocol).toBe("mcp");
-    expect(manifest.mcp.transport).toBe("stdio");
-    expect(manifest.mcp.invocation.npx).toBe("npx auditreach-cli mcp");
-    expect(manifest.mcp.invocation.installed).toBe("auditreach mcp");
+    expect(manifest.protocol).toBe("mcp");
+    expect(manifest.transport).toBe("stdio");
+    const commands = manifest.invocation.map((entry) => entry.command);
+    expect(commands).toContain("npx auditreach-cli mcp");
+    expect(commands).toContain("auditreach mcp");
+    expect(commands).toContain("pipx run auditreach-cli mcp");
+    const distributions = new Set(manifest.invocation.map((entry) => entry.distribution));
+    expect(distributions).toEqual(new Set(["npm", "pypi"]));
   });
 
   it("lists exactly the 3 MCP tools this PR implements, each with a parameter schema", async () => {
     const manifest = (await readJson("../.well-known/agent.json")) as AgentManifest;
-    const names = manifest.mcp.tools.map((tool) => tool.name).sort();
+    const names = manifest.tools.map((tool) => tool.name).sort();
     expect(names).toEqual(["auth_status", "search", "verify_log"]);
-    for (const tool of manifest.mcp.tools) {
-      expect(tool.parameters).toBeTruthy();
+    for (const tool of manifest.tools) {
+      expect(tool.inputSchema).toBeTruthy();
       expect(tool.description.length).toBeGreaterThan(0);
     }
   });
 
   it("never claims to expose credential set/clear as a tool", async () => {
     const manifest = (await readJson("../.well-known/agent.json")) as AgentManifest;
-    const toolNames = manifest.mcp.tools.map((tool) => tool.name);
+    const toolNames = manifest.tools.map((tool) => tool.name);
     expect(toolNames).not.toContain("auth_set");
     expect(toolNames).not.toContain("auth_clear");
     expect(toolNames).not.toContain("auth");
