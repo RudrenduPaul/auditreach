@@ -22,7 +22,7 @@ version.
   through to the existing command logic rather than reimplementing it:
   `search` (same parameters as `auditreach search`), `auth_status`
   (read-only equivalent of `auditreach auth --platform <p> --verify
-  --json` -- deliberately cannot set or clear credentials), and
+--json` -- deliberately cannot set or clear credentials), and
   `verify_log` (same as `auditreach verify-log --json`).
 - `.well-known/agent.json` -- a repo-root discovery manifest describing
   auditreach's name, BYOK auth requirement, MCP transport (stdio),

@@ -185,11 +185,11 @@ Runs an [MCP](https://modelcontextprotocol.io) (Model Context Protocol)
 server over stdio, exposing 3 tools that reuse the exact same command logic
 as the CLI above -- no reimplementation, no drift:
 
-| Tool          | Equivalent to                              |
-| ------------- | ------------------------------------------- |
-| `search`      | `auditreach search --json`                   |
+| Tool          | Equivalent to                                                |
+| ------------- | ------------------------------------------------------------ |
+| `search`      | `auditreach search --json`                                   |
 | `auth_status` | `auditreach auth --platform <p> --verify --json` (read-only) |
-| `verify_log`  | `auditreach verify-log --json`               |
+| `verify_log`  | `auditreach verify-log --json`                               |
 
 `auth_status` is deliberately read-only: it can check whether credentials
 are already stored and valid, but it can never set or clear them. Setting
