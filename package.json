@@ -1,6 +1,6 @@
 {
   "name": "auditreach-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Official-API-only, BYOK CLI for researching Reddit and YouTube with your own API keys and a tamper-evident, hash-chained audit log -- built for AI agents and compliance teams that can't rely on cookie-based scraping or shared credential pools.",
   "type": "module",
   "bin": {

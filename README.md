@@ -12,11 +12,7 @@ Research Reddit and YouTube from your AI agent using only official APIs, your ow
 
 </div>
 
-<!-- TODO: record a real terminal demo (asciinema or a short GIF) and embed it here.
-     Capture script: run the two commands under "What it does" below against a real
-     Reddit search-app credential, in a clean terminal, ~15-20s total. Save as
-     docs/demo.gif and replace this comment with:
-     ![auditreach demo: running a Reddit search and verifying the audit log](docs/demo.gif) -->
+![auditreach demo: running --help and a first-run auth --verify check with no credentials configured yet](docs/demo.gif)
 
 ## Install
 
@@ -73,11 +69,11 @@ node dist/cli.js search --platform reddit --query "your query"
 - [Platform coverage](#platform-coverage)
 - [Result limits](#result-limits)
 - [What is a "consent basis," honestly](#what-is-a-consent-basis-honestly)
-- [FAQ](#faq)
 - [Self-hosting / local-only by default](#self-hosting--local-only-by-default)
 - [Development](#development)
 - [Security](#security)
 - [Success stories](#success-stories)
+- [FAQ](#faq)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -226,6 +222,8 @@ Run a [Model Context Protocol](https://modelcontextprotocol.io) server over stdi
 
 Setting up or clearing BYOK credentials (`auditreach auth --platform <p>` / `--clear`) is deliberately **not** exposed over MCP -- that stays a local-CLI-only, human-driven action, so a calling agent can check whether credentials work but can never provision or wipe them itself. See [`.well-known/agent.json`](.well-known/agent.json) for the machine-readable manifest (auth requirements, tool schemas, invocation commands) that an agent or agent registry can read to discover this server without a human reading the README first.
 
+![auditreach usage: sending a raw MCP initialize + tools/list JSON-RPC request over stdio to auditreach mcp and getting back the three registered tools](docs/usage.gif)
+
 Run `auditreach <command> --help` any time to see the exact flags your installed version supports.
 
 ## Library API reference
@@ -329,26 +327,6 @@ Values above the cap are silently clamped to it. For Reddit, `--before`/`--after
 
 The `consent_basis` field on every audit-log entry names the specific platform API terms and auth mechanism used for that query. It certifies that the request went through the platform's official, documented API surface under the credentials you supplied. **It does not certify that your specific use case is legally sufficient for your jurisdiction or contract** -- that determination is yours to make, informed by an accurate, complete, tamper-evident record of what actually happened.
 
-## FAQ
-
-**Does auditreach store my Reddit or YouTube credentials anywhere?**
-No. Credentials go straight into your OS keychain through `@napi-rs/keyring` (`src/auth/credential-store.ts`). There is no config file, no environment variable, and no code path that writes a raw credential to disk.
-
-**How many results does a search return by default, and can I get more?**
-25, silently, unless you pass `--max-results` -- see [Result limits](#result-limits). The hard cap is 100 for Reddit and 50 for YouTube. A stderr warning fires whenever a search actually hits the applied limit, whether that's the silent default or an explicit value you passed.
-
-**Can I page past Reddit's result cap?**
-Yes, for Reddit, up to a point: `search()` reads the real `after`/`before` cursor out of Reddit's own response and exposes `--before`/`--after` flags to page in either direction through a search's result set. It does not get you past Reddit's own ~1,000-item search cap -- see the [praw#614 success story](#success-stories) for what that fix actually covers and doesn't.
-
-**Does auditreach support X (Twitter)?**
-Not yet. X API v2's pricing and post-volume caps have been prohibitive for small teams doing real research since the 2023 changes. See [Platform coverage](#platform-coverage) for the full reasoning.
-
-**How do I check my credentials are still valid without running a real search?**
-`node dist/cli.js auth --platform reddit --verify` (or `--platform youtube`). It performs the minimal authenticated check and reports pass or fail, with no `--query` needed, no results file written, and no audit-log entry appended.
-
-**Is the audit log actually tamper-evident, or just a log file?**
-Tamper-evident: each entry's hash is computed from its own content and the next entry references it, so `verify-log` can point to the exact entry a hand-edit broke. See the demo under [What it does](#what-it-does).
-
 ## Self-hosting / local-only by default
 
 Nothing about auditreach requires a hosted account or server. Every command runs entirely on your machine; the audit log is a plain file you own. This is the same flow as [Install](#install) above:
@@ -412,6 +390,38 @@ single outside user. Each line below is tied to the actual report that prompted 
   class's docstring; PRAW's own maintainer admitted he "wasn't sure the best way to make
   this clear." `--help` and this README now state the real default and per-platform
   caps, and a runtime warning fires whenever a search actually got truncated.
+
+## FAQ
+
+**What is auditreach, and what makes it different from other Reddit/YouTube research tools?**
+It is a BYOK CLI (and MCP server) that talks to Reddit and YouTube only through their official, documented APIs, using your own API keys, and writes a hash-chained audit-log entry for every query -- platform, endpoint, scope, and the specific consent/ToS basis for that call. The differentiator is what it refuses to do: no cookie import, no shared-session scraping, no code path that pretends to be a logged-in human. See [Why auditreach exists](#why-auditreach-exists) for the full reasoning and [How it compares](#how-it-compares) for the table against named alternatives.
+
+**What platforms and versions does auditreach run on?**
+The npm package (`auditreach-cli`) requires Node.js 20 or newer (`engines` field in `package.json`). The PyPI package (also `auditreach-cli`) requires Python 3.10+ (`requires-python` in `python/pyproject.toml`), which also carries the `Operating System :: OS Independent` classifier. Credentials go into your OS keychain through `@napi-rs/keyring` (npm) or `keyring` (PyPI) instead of a config file, so there is no platform-specific setup beyond having Node or Python installed.
+
+**Does auditreach store my Reddit or YouTube credentials anywhere?**
+No. Credentials go straight into your OS keychain through `@napi-rs/keyring` (`src/auth/credential-store.ts`). There is no config file, no environment variable, and no code path that writes a raw credential to disk.
+
+**How many results does a search return by default, and can I get more?**
+25, silently, unless you pass `--max-results` -- see [Result limits](#result-limits). The hard cap is 100 for Reddit and 50 for YouTube. A stderr warning fires whenever a search actually hits the applied limit, whether that's the silent default or an explicit value you passed.
+
+**How do I check my credentials are still valid without running a real search?**
+`node dist/cli.js auth --platform reddit --verify` (or `--platform youtube`). It performs the minimal authenticated check and reports pass or fail, with no `--query` needed, no results file written, and no audit-log entry appended.
+
+**Is the audit log actually tamper-evident, or just a log file?**
+Tamper-evident: each entry's hash is computed from its own content and the next entry references it, so `verify-log` can point to the exact entry a hand-edit broke. See the demo under [What it does](#what-it-does).
+
+**What are auditreach's current limitations?**
+Two worth knowing up front. First, X (Twitter) is not shipped -- X API v2's pricing and post-volume caps have been prohibitive for small teams doing real research since the 2023 changes; see [Platform coverage](#platform-coverage). Second, Reddit paging: `search()` reads the real `after`/`before` cursor out of Reddit's own response and exposes `--before`/`--after` flags to page through a single search's result set, but that does not get you past Reddit's own ~1,000-item search cap -- see the [praw#614 success story](#success-stories) for what the fix covers and doesn't.
+
+**How does the MCP server mode work?**
+`auditreach mcp` (npm) or `pipx run auditreach-cli mcp` (PyPI) starts a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio, built on the official `@modelcontextprotocol/sdk` / `mcp` SDKs. It exposes exactly 3 tools -- `search`, `auth_status` (read-only, cannot set or clear credentials), and `verify_log` -- each a thin wrapper around the same programmatic core the CLI commands use, so nothing is reimplemented for the agent path. See [`auditreach mcp`](#auditreach-mcp) above for the full tool table and [`.well-known/agent.json`](.well-known/agent.json) for the machine-readable manifest an agent registry can read directly.
+
+**How does auditreach compare to Agent-Reach specifically?**
+Agent-Reach covers more platforms (six, versus auditreach's two) by importing a logged-in browser session and scraping as that user, at zero API cost. auditreach only calls official, documented APIs with your own keys and writes a hash-chained consent/audit entry per query; it has no session-import code path at all. Neither approach is strictly better -- they're built for different buyers. See [How it compares](#how-it-compares) for the full side-by-side.
+
+**Is auditreach free to use commercially, and what does the license actually require?**
+Yes. auditreach is Apache 2.0 (see `LICENSE`), which permits commercial use, modification, and redistribution, including as part of a closed-source product. The conditions are: include a copy of the license with anything you redistribute, mark any files you modified, and keep the existing copyright/attribution notices. It does not grant rights to auditreach's name or trademarks.
 
 ## Contributing
 
