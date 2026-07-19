@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "auditreach-cli"
-version = "0.2.0"
+version = "0.2.1"
 description = "Official-API-only, BYOK CLI for researching Reddit and YouTube with your own API keys and a tamper-evident, hash-chained audit log. Includes an MCP server for agent-native use."
 readme = "README.md"
 requires-python = ">=3.10"
