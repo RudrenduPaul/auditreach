@@ -44,6 +44,9 @@
     "api-client"
   ],
   "author": "Rudrendu Paul",
+  "contributors": [
+    "Sourav Nandy"
+  ],
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
