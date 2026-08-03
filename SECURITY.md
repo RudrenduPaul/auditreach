@@ -8,11 +8,11 @@ TypeScript, repo root) and the PyPI package (`auditreach-cli`, Python,
 
 | Package                 | Version | Supported |
 | ----------------------- | ------- | --------- |
-| `auditreach-cli` (npm)  | 0.1.x   | Yes       |
-| `auditreach-cli` (PyPI) | 0.1.x   | Yes       |
+| `auditreach-cli` (npm)  | 0.2.x   | Yes       |
+| `auditreach-cli` (PyPI) | 0.2.x   | Yes       |
 
 Both distributions are pre-1.0 and under active development. Security fixes
-land on the latest `0.1.x` release of each; there is no older supported
+land on the latest `0.2.x` release of each; there is no older supported
 line to backport to yet.
 
 ## Scope
@@ -26,7 +26,7 @@ A vulnerability that could leak a credential, forge an audit-log entry, or bypas
 
 ## Reporting a vulnerability
 
-Please do not open a public GitHub issue for a security vulnerability. Instead, email **security@auditreach.dev** or use GitHub's private vulnerability reporting (Security tab -> Report a vulnerability) on this repository.
+Please do not open a public GitHub issue for a security vulnerability. Instead, use GitHub's private vulnerability reporting (Security tab -> Report a vulnerability) on this repository.
 
 Include:
 
