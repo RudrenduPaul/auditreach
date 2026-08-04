@@ -81,7 +81,7 @@ node dist/cli.js search --platform reddit --query "your query"
 
 A consultancy we talked to had an AI research agent pulling social sentiment for a client report. It worked well until the client's legal team asked, in writing, what authority the data collection was under. The honest answer was "a browser cookie session," because the tool they were using authenticates by importing a logged-in session and scraping as if it were a real user. That works. It is also not an answer you can put in a compliance memo, and it is the exact pattern Reddit sued Anthropic and SerpApi over in 2025, and the same pattern that got Pushshift's public API access shut down by Reddit back in 2024.
 
-[Agent-Reach](https://github.com/Panniantong/Agent-Reach) is not a bad tool. It has real traction (55k+ stars) because cookie-based scraping genuinely covers more ground than any official API does today, at zero API cost. But "covers more ground" and "an agency's client can pass a compliance review" are two different bars, and nothing was built specifically to clear the second one.
+[Agent-Reach](https://github.com/Panniantong/Agent-Reach) is not a bad tool. It has real traction (65k+ stars) because cookie-based scraping genuinely covers more ground than any official API does today, at zero API cost. But "covers more ground" and "an agency's client can pass a compliance review" are two different bars, and nothing was built specifically to clear the second one.
 
 auditreach is the CLI we wished existed instead. It talks to Reddit and YouTube only through their official, documented APIs, using your own API keys -- never a shared pool -- and every single query writes a hash-chained entry to a local audit log: which platform, which endpoint, which scope, and a plain-language line explaining the consent/ToS basis for that specific call. No cookie import. No session-token reuse. No code path that could even pretend to be a logged-in human.
 
@@ -89,18 +89,18 @@ We are not trying to out-cover Agent-Reach's six platforms. auditreach is narrow
 
 ## How it compares
 
-|                              | **auditreach**                 | **Agent-Reach**                                         | **snoowrap**                                        |
-| ---------------------------- | ------------------------------ | ------------------------------------------------------- | --------------------------------------------------- |
-| Access model                 | Official API only, BYO-key     | Cookie/session import, "zero API fees"                  | Official API, BYO-key                               |
-| Platform coverage (v0.1)     | Reddit, YouTube                | Twitter, Reddit, YouTube, GitHub, Bilibili, XiaoHongShu | Reddit only                                         |
-| Consent/audit log            | Hash-chained, per-query, local | None                                                    | None                                                |
-| Maintenance status           | Active (this release)          | Active, 55k stars                                       | **Archived** since Feb 2023                         |
-| License                      | Apache 2.0                     | MIT                                                     | MIT                                                 |
-| Runtime deps (Reddit client) | 0 -- native `fetch`            | n/a (Python, browser-session based)                     | `request`, `request-promise`, `ws` (all deprecated) |
+|                               | **auditreach**                 | **Agent-Reach**                                          | **snoowrap**                                         |
+| ----------------------------- | ------------------------------- | --------------------------------------------------------- | ------------------------------------------------------ |
+| Access model                  | Official API only, BYO-key      | Cookie/session import, "zero API fees"                     | Official API, BYO-key                                  |
+| Platform coverage             | Reddit, YouTube                 | Twitter, Reddit, YouTube, GitHub, Bilibili, XiaoHongShu    | Reddit only                                             |
+| Consent/audit log             | Hash-chained, per-query, local  | None                                                       | None                                                    |
+| Maintenance status            | Active (this release)           | Active, 65k+ stars                                         | **Archived** since Feb 2023                             |
+| License                       | Apache 2.0                      | MIT                                                        | MIT                                                     |
+| Runtime deps (Reddit client)  | 0 -- native `fetch`             | n/a (Python, browser-session based)                        | `request`, `request-promise`, `ws` (all deprecated)     |
 
 Numbers measured directly against each repo's public GitHub metadata and, for the dependency comparison, against `snoowrap`'s own published `package.json` as of this writing -- reproducible by anyone with `gh api repos/<owner>/<repo>`.
 
-We started building auditreach's Reddit client on top of `snoowrap`, the most-used Reddit API wrapper in the Node ecosystem. Installing it pulled in `request`, `request-promise`, `form-data`, and `har-validator` -- a dependency chain with **4 CRITICAL** and multiple HIGH severity advisories, none of which snoowrap can fix because the project has been archived since 2023. We rewrote the Reddit client as a direct `fetch`-based OAuth2 client against Reddit's own documented REST endpoints instead: same functionality, zero of those CVEs, zero extra runtime dependencies. `npm audit --audit-level=high` on this repo returns clean.
+We started building auditreach's Reddit client on top of `snoowrap`, the most-used Reddit API wrapper in the Node ecosystem. Installing it pulls in `request`, `request-promise`, `form-data`, and `har-validator` -- a dependency chain that currently carries 2 CRITICAL, 2 HIGH, and 5 moderate severity advisories (9 total, per `npm audit`), none of which snoowrap can fix because the project has been archived since 2023. We rewrote the Reddit client as a direct `fetch`-based OAuth2 client against Reddit's own documented REST endpoints instead: same functionality, none of those CVEs, zero extra runtime dependencies for that client. See [Security](#security) for auditreach's own current `npm audit` status.
 
 ## What it does
 
@@ -169,7 +169,7 @@ Honest note on setup time: getting your own API credentials from Reddit and Goog
 Search a platform using its official API only.
 
 | Flag                      | Description                                                                                     |
-| ------------------------- | ----------------------------------------------------------------------------------------------- |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
 | `--platform <platform>`   | `reddit` \| `youtube` (required)                                                                |
 | `--query <query>`         | search query (required)                                                                         |
 | `--subreddit <subreddit>` | restrict search to one subreddit (Reddit only)                                                  |
@@ -189,11 +189,11 @@ Search a platform using its official API only.
 Set up, verify, or clear BYOK credentials for a platform (stored in your OS keychain).
 
 | Flag                    | Description                                                                                        |
-| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| ----------------------- | --------------------------------------------------------------------------------------------------- |
 | `--platform <platform>` | `reddit` \| `youtube` (required)                                                                   |
 | `--clear`               | delete stored credentials for this platform                                                        |
 | `--verify`              | verify stored credentials are valid without running a search (no results file, no audit-log entry) |
-| `--json`                | print structured JSON to stdout instead of human-readable output                                   |
+| `--json`                | with `--verify`, print a structured JSON result instead of human-readable text                     |
 
     node dist/cli.js auth --platform reddit --verify
 
@@ -202,7 +202,7 @@ Set up, verify, or clear BYOK credentials for a platform (stored in your OS keyc
 Verify the local hash-chained audit log has not been tampered with.
 
 | Flag            | Description                                                                  |
-| --------------- | ---------------------------------------------------------------------------- |
+| --------------- | ----------------------------------------------------------------------------- |
 | `--path <path>` | path to the audit log file (defaults to `./auditreach.log.jsonl` if omitted) |
 
     node dist/cli.js verify-log --path ./auditreach.log.jsonl
@@ -212,7 +212,7 @@ Verify the local hash-chained audit log has not been tampered with.
 Run a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio (built on the official `@modelcontextprotocol/sdk`), exposing exactly 3 tools so an AI agent can call this CLI directly instead of shelling out and parsing stdout:
 
 | Tool          | Equivalent to                                    | Notes                                                                                  |
-| ------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| ------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `search`      | `auditreach search --json`                       | Same parameters: platform, query, subreddit/channel, since, maxResults, before/after   |
 | `auth_status` | `auditreach auth --platform <p> --verify --json` | **Read-only.** Checks whether stored credentials are valid -- cannot set or clear them |
 | `verify_log`  | `auditreach verify-log --json`                   | Same parameters: path                                                                  |
@@ -228,7 +228,7 @@ Run `auditreach <command> --help` any time to see the exact flags your installed
 
 ## Library API reference
 
-`auditreach-cli` is also importable as a library, not just a CLI. Every export below comes straight from `dist/index.d.ts` in the published package.
+`auditreach-cli` doubles as an importable library. Every export below comes straight from `dist/index.d.ts` in the published package.
 
 ```ts
 import {
@@ -248,6 +248,7 @@ import {
   sha256Hex,
   DEFAULT_AUDIT_LOG_PATH,
   executeSearch,
+  SearchCommandError,
   checkAuthStatus,
   executeVerifyLog,
   buildMcpServer,
@@ -297,6 +298,7 @@ if (!result.valid) {
 **Command cores and MCP**
 
 - `executeSearch(args)`, `checkAuthStatus(platform)`, `executeVerifyLog(path?)` -- the same programmatic cores the `search` / `auth --verify` / `verify-log` CLI commands and the MCP tools both call into; none of them write to console/stdout, so they're safe to call from any host, including one sharing stdout with an MCP transport.
+- `SearchCommandError` -- the error class `executeSearch` throws for an expected, user-actionable failure: no BYOK credentials stored yet for the target platform, or a Reddit search called without `--query`. Catch it specifically to distinguish "you called this wrong" from a real network/API failure.
 - `buildMcpServer({ version }): McpServer` -- constructs the MCP server (from `@modelcontextprotocol/sdk`) with the `search` / `auth_status` / `verify_log` tools registered, without starting a transport -- useful for testing or embedding in a larger MCP server.
 - `runMcpServerCommand({ version })` -- what `auditreach mcp` runs: builds the server and connects it over stdio. Never returns while the server is running.
 
@@ -307,7 +309,7 @@ The Python package (`auditreach-cli` on PyPI) exposes the same surface with `sna
 ## Platform coverage
 
 | Platform    | API used                                        | Status              | Known constraint                                                                                                                                                                                                                                                                                                                                                                           |
-| ----------- | ----------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ----------- | ------------------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Reddit      | Reddit API (OAuth2 password grant, direct REST) | Shipped             | Rate limits are generally workable for real research volumes                                                                                                                                                                                                                                                                                                                               |
 | YouTube     | YouTube Data API v3 (`googleapis`)              | Shipped             | Quota-based (10,000 units/day default), generally workable                                                                                                                                                                                                                                                                                                                                 |
 | X (Twitter) | X API v2                                        | **Not yet shipped** | X's official API pricing and post-volume caps have been widely reported as prohibitive for small teams doing meaningful research since the 2023 pricing changes. Deferred until a real user needs it enough to fund working around that constraint -- shipping it half-working would undercut the entire "honest about what official APIs can and can't do" premise this tool is built on. |
@@ -317,9 +319,9 @@ The Python package (`auditreach-cli` on PyPI) exposes the same surface with `sna
 `--max-results <n>` controls how many items a single `search` call returns. Leave it off and auditreach silently applies a default of 25 -- the same shape of surprise PRAW's `get_comments()` had for years ([praw#119](https://github.com/praw-dev/praw/issues/119)): a caller who does not already know to pass the flag gets a quietly truncated result set.
 
 | Platform | Default (flag omitted) | Maximum (`--max-results`) |
-| -------- | ---------------------- | ------------------------- |
-| Reddit   | 25                     | 100                       |
-| YouTube  | 25                     | 50                        |
+| -------- | ----------------------- | --------------------------- |
+| Reddit   | 25                      | 100                          |
+| YouTube  | 25                      | 50                           |
 
 Values above the cap are silently clamped to it. For Reddit, `--before`/`--after` let you page through a search's result set using the real cursor Reddit's own response returns, up to Reddit's own ~1,000-item search cap (see [Success stories](#success-stories) for why cursor pagination alone can't go further than that); YouTube has no equivalent yet. Whenever the number of items returned equals the limit that was actually applied, whether that is the silent default or an explicit `--max-results` value, auditreach prints a warning to stderr telling you more results may exist and how to raise `--max-results` (up to the platform cap).
 
@@ -345,20 +347,20 @@ Nothing about auditreach requires a hosted account or server. Every command runs
     npm run lint          # ESLint
     npm run format        # Prettier check
     npm run typecheck     # tsc --noEmit --strict
-    npm run test:coverage # vitest, 66 tests, 95.4% statement coverage
+    npm run test:coverage # vitest, 91 tests, 95.1% statement coverage
 
 **Python (`python/`):**
 
     cd python
     python3 -m venv .venv && source .venv/bin/activate
     pip install -e ".[dev]"
-    pytest                # 82 tests
+    pytest                # 95 tests
 
 See `CONTRIBUTING.md` for the rules on adding a new platform client -- the short version: official API only, honest rate-limit disclosure, tests that mock the network boundary, never anything that reads or writes a raw credential outside `src/auth/credential-store.ts` (or `python/src/auditreach/auth/credential_store.py` on the Python side).
 
 ## Security
 
-See `SECURITY.md` for the vulnerability disclosure policy. A pre-launch OWASP/STRIDE review found zero CRITICAL/HIGH findings and one moderate, non-directly-reachable supply-chain advisory that has since been resolved -- `npm audit` on this repo currently returns zero vulnerabilities. GitHub secret scanning and push protection are enabled on this repo.
+See `SECURITY.md` for the vulnerability disclosure policy. A pre-launch OWASP/STRIDE review found zero CRITICAL/HIGH findings in auditreach's own code. As of this writing, `npm audit --audit-level=high` on a fresh install reports 3 advisories (1 moderate, 2 high) in `ip-address` and `hono` -- both pulled in transitively by the official `@modelcontextprotocol/sdk` dependency's HTTP-transport code. `auditreach mcp` only ever starts the SDK's stdio transport (`StdioServerTransport`), so that code path never runs, but the packages still ship in `node_modules` and still trip `npm audit` until upstream bumps its pinned versions. GitHub secret scanning and push protection are enabled on this repo.
 
 ## Success stories
 
