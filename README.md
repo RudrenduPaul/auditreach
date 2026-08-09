@@ -135,6 +135,8 @@ Every entry in `auditreach.log.jsonl` is hash-chained -- each entry's hash is co
     ✗ Chain broken at entry 3 (ar_2026-07-12_9f3c2a): entry ar_2026-07-12_9f3c2a hash does not
       match its own content -- entry was edited after being written
 
+![auditreach demo: hand-editing an entry in auditreach.log.jsonl, then running verify-log and watching it catch the broken hash chain](docs/demo-3-audit-log-tamper-check.gif)
+
 ## Getting started
 
 **1. Install:** see [Install](#install) above -- `npx auditreach-cli`, `npm install -g auditreach-cli`, or clone and build from source.
