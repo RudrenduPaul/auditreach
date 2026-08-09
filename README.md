@@ -2,13 +2,15 @@
 
 # auditreach
 
-Research Reddit and YouTube from your AI agent using only official APIs, your own keys, and a log that proves exactly what you queried and why it was allowed.
-
 [![CI](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml/badge.svg)](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/auditreach-cli)](https://www.npmjs.com/package/auditreach-cli)
 [![PyPI version](https://img.shields.io/pypi/v/auditreach-cli.svg)](https://pypi.org/project/auditreach-cli/)
 [![License: Apache 2.0](https://img.shields.io/github/license/RudrenduPaul/auditreach)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
+
+[Install](#install) • [What it does](#what-it-does) • [Getting started](#getting-started) • [Commands](#commands) • [Security](#security) • [FAQ](#faq)
+
+Research Reddit and YouTube from your AI agent using only official APIs, your own keys, and a log that proves exactly what you queried and why it was allowed.
 
 </div>
 
@@ -58,50 +60,6 @@ npm run build
 node dist/cli.js search --platform reddit --query "your query"
 ```
 
-## Table of contents
-
-- [Why auditreach exists](#why-auditreach-exists)
-- [How it compares](#how-it-compares)
-- [What it does](#what-it-does)
-- [Getting started](#getting-started)
-- [Commands](#commands)
-- [Library API reference](#library-api-reference)
-- [Platform coverage](#platform-coverage)
-- [Result limits](#result-limits)
-- [What is a "consent basis," honestly](#what-is-a-consent-basis-honestly)
-- [Self-hosting / local-only by default](#self-hosting--local-only-by-default)
-- [Development](#development)
-- [Security](#security)
-- [Success stories](#success-stories)
-- [FAQ](#faq)
-- [Contributing](#contributing)
-- [License](#license)
-
-## Why auditreach exists
-
-A consultancy we talked to had an AI research agent pulling social sentiment for a client report. It worked well until the client's legal team asked, in writing, what authority the data collection was under. The honest answer was "a browser cookie session," because the tool they were using authenticates by importing a logged-in session and scraping as if it were a real user. That works. It is also not an answer you can put in a compliance memo, and it is the exact pattern Reddit sued Anthropic and SerpApi over in 2025, and the same pattern that got Pushshift's public API access shut down by Reddit back in 2024.
-
-[Agent-Reach](https://github.com/Panniantong/Agent-Reach) is not a bad tool. It has real traction (65k+ stars) because cookie-based scraping genuinely covers more ground than any official API does today, at zero API cost. But "covers more ground" and "an agency's client can pass a compliance review" are two different bars, and nothing was built specifically to clear the second one.
-
-auditreach is the CLI we wished existed instead. It talks to Reddit and YouTube only through their official, documented APIs, using your own API keys -- never a shared pool -- and every single query writes a hash-chained entry to a local audit log: which platform, which endpoint, which scope, and a plain-language line explaining the consent/ToS basis for that specific call. No cookie import. No session-token reuse. No code path that could even pretend to be a logged-in human.
-
-We are not trying to out-cover Agent-Reach's six platforms. auditreach is narrower on purpose, for the buyer who structurally can't use a cookie-based tool at all.
-
-## How it compares
-
-|                              | **auditreach**                 | **Agent-Reach**                                         | **snoowrap**                                        |
-| ---------------------------- | ------------------------------ | ------------------------------------------------------- | --------------------------------------------------- |
-| Access model                 | Official API only, BYO-key     | Cookie/session import, "zero API fees"                  | Official API, BYO-key                               |
-| Platform coverage            | Reddit, YouTube                | Twitter, Reddit, YouTube, GitHub, Bilibili, XiaoHongShu | Reddit only                                         |
-| Consent/audit log            | Hash-chained, per-query, local | None                                                    | None                                                |
-| Maintenance status           | Active (this release)          | Active, 65k+ stars                                      | **Archived** since Feb 2023                         |
-| License                      | Apache 2.0                     | MIT                                                     | MIT                                                 |
-| Runtime deps (Reddit client) | 0 -- native `fetch`            | n/a (Python, browser-session based)                     | `request`, `request-promise`, `ws` (all deprecated) |
-
-Numbers measured directly against each repo's public GitHub metadata and, for the dependency comparison, against `snoowrap`'s own published `package.json` as of this writing -- reproducible by anyone with `gh api repos/<owner>/<repo>`.
-
-We started building auditreach's Reddit client on top of `snoowrap`, the most-used Reddit API wrapper in the Node ecosystem. Installing it pulls in `request`, `request-promise`, `form-data`, and `har-validator` -- a dependency chain that currently carries 2 CRITICAL, 2 HIGH, and 5 moderate severity advisories (9 total, per `npm audit`), none of which snoowrap can fix because the project has been archived since 2023. We rewrote the Reddit client as a direct `fetch`-based OAuth2 client against Reddit's own documented REST endpoints instead: same functionality, none of those CVEs, zero extra runtime dependencies for that client. See [Security](#security) for auditreach's own current `npm audit` status.
-
 ## What it does
 
     node dist/cli.js search --platform reddit --query "agent memory poisoning" --subreddit MachineLearning
@@ -136,6 +94,31 @@ Every entry in `auditreach.log.jsonl` is hash-chained -- each entry's hash is co
       match its own content -- entry was edited after being written
 
 ![auditreach demo: hand-editing an entry in auditreach.log.jsonl, then running verify-log and watching it catch the broken hash chain](docs/demo-3-audit-log-tamper-check.gif)
+
+## How it compares
+
+|                              | **auditreach**                 | **Agent-Reach**                                         | **snoowrap**                                        |
+| ---------------------------- | ------------------------------ | ------------------------------------------------------- | --------------------------------------------------- |
+| Access model                 | Official API only, BYO-key     | Cookie/session import, "zero API fees"                  | Official API, BYO-key                               |
+| Platform coverage            | Reddit, YouTube                | Twitter, Reddit, YouTube, GitHub, Bilibili, XiaoHongShu | Reddit only                                         |
+| Consent/audit log            | Hash-chained, per-query, local | None                                                    | None                                                |
+| Maintenance status           | Active (this release)          | Active, 65k+ stars                                      | **Archived** since Feb 2023                         |
+| License                      | Apache 2.0                     | MIT                                                     | MIT                                                 |
+| Runtime deps (Reddit client) | 0 -- native `fetch`            | n/a (Python, browser-session based)                     | `request`, `request-promise`, `ws` (all deprecated) |
+
+Numbers measured directly against each repo's public GitHub metadata and, for the dependency comparison, against `snoowrap`'s own published `package.json` as of this writing -- reproducible by anyone with `gh api repos/<owner>/<repo>`.
+
+We started building auditreach's Reddit client on top of `snoowrap`, the most-used Reddit API wrapper in the Node ecosystem. Installing it pulls in `request`, `request-promise`, `form-data`, and `har-validator` -- a dependency chain that currently carries 2 CRITICAL, 2 HIGH, and 5 moderate severity advisories (9 total, per `npm audit`), none of which snoowrap can fix because the project has been archived since 2023. We rewrote the Reddit client as a direct `fetch`-based OAuth2 client against Reddit's own documented REST endpoints instead: same functionality, none of those CVEs, zero extra runtime dependencies for that client. See [Security](#security) for auditreach's own current `npm audit` status.
+
+## Why auditreach exists
+
+A consultancy we talked to had an AI research agent pulling social sentiment for a client report. It worked well until the client's legal team asked, in writing, what authority the data collection was under. The honest answer was "a browser cookie session," because the tool they were using authenticates by importing a logged-in session and scraping as if it were a real user. That works. It is also not an answer you can put in a compliance memo, and it is the exact pattern Reddit sued Anthropic and SerpApi over in 2025, and the same pattern that got Pushshift's public API access shut down by Reddit back in 2024.
+
+[Agent-Reach](https://github.com/Panniantong/Agent-Reach) is not a bad tool. It has real traction (65k+ stars) because cookie-based scraping genuinely covers more ground than any official API does today, at zero API cost. But "covers more ground" and "an agency's client can pass a compliance review" are two different bars, and nothing was built specifically to clear the second one.
+
+auditreach is the CLI we wished existed instead. It talks to Reddit and YouTube only through their official, documented APIs, using your own API keys -- never a shared pool -- and every single query writes a hash-chained entry to a local audit log: which platform, which endpoint, which scope, and a plain-language line explaining the consent/ToS basis for that specific call. No cookie import. No session-token reuse. No code path that could even pretend to be a logged-in human.
+
+We are not trying to out-cover Agent-Reach's six platforms. auditreach is narrower on purpose, for the buyer who structurally can't use a cookie-based tool at all.
 
 ## Getting started
 
@@ -320,6 +303,9 @@ The Python package (`auditreach-cli` on PyPI) exposes the same surface with `sna
 
 `--max-results <n>` controls how many items a single `search` call returns. Leave it off and auditreach silently applies a default of 25 -- the same shape of surprise PRAW's `get_comments()` had for years ([praw#119](https://github.com/praw-dev/praw/issues/119)): a caller who does not already know to pass the flag gets a quietly truncated result set.
 
+> [!NOTE]
+> A search that returns exactly the applied limit (25 by default, or your `--max-results` value) may not be the full result set. auditreach prints a stderr warning when this happens, but scripts that only parse stdout/`--json` output won't see it -- check for the warning or pass an explicit `--max-results` if completeness matters.
+
 | Platform | Default (flag omitted) | Maximum (`--max-results`) |
 | -------- | ---------------------- | ------------------------- |
 | Reddit   | 25                     | 100                       |
@@ -363,6 +349,9 @@ See `CONTRIBUTING.md` for the rules on adding a new platform client -- the short
 ## Security
 
 See `SECURITY.md` for the vulnerability disclosure policy. A pre-launch OWASP/STRIDE review found zero CRITICAL/HIGH findings in auditreach's own code. As of this writing, `npm audit --audit-level=high` on a fresh install reports 3 advisories (1 moderate, 2 high) in `ip-address` and `hono` -- both pulled in transitively by the official `@modelcontextprotocol/sdk` dependency's HTTP-transport code. `auditreach mcp` only ever starts the SDK's stdio transport (`StdioServerTransport`), so that code path never runs, but the packages still ship in `node_modules` and still trip `npm audit` until upstream bumps its pinned versions. GitHub secret scanning and push protection are enabled on this repo.
+
+> [!NOTE]
+> If `npm audit` flags `ip-address`/`hono` on your install, that's the unused HTTP-transport code path described above, not a reachable vulnerability in how `auditreach mcp` actually runs (stdio only). It will clear once `@modelcontextprotocol/sdk` bumps its pinned versions upstream.
 
 ## Success stories
 
