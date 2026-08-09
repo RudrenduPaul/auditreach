@@ -89,14 +89,14 @@ We are not trying to out-cover Agent-Reach's six platforms. auditreach is narrow
 
 ## How it compares
 
-|                               | **auditreach**                 | **Agent-Reach**                                          | **snoowrap**                                         |
-| ----------------------------- | ------------------------------- | --------------------------------------------------------- | ------------------------------------------------------ |
-| Access model                  | Official API only, BYO-key      | Cookie/session import, "zero API fees"                     | Official API, BYO-key                                  |
-| Platform coverage             | Reddit, YouTube                 | Twitter, Reddit, YouTube, GitHub, Bilibili, XiaoHongShu    | Reddit only                                             |
-| Consent/audit log             | Hash-chained, per-query, local  | None                                                       | None                                                    |
-| Maintenance status            | Active (this release)           | Active, 65k+ stars                                         | **Archived** since Feb 2023                             |
-| License                       | Apache 2.0                      | MIT                                                        | MIT                                                     |
-| Runtime deps (Reddit client)  | 0 -- native `fetch`             | n/a (Python, browser-session based)                        | `request`, `request-promise`, `ws` (all deprecated)     |
+|                              | **auditreach**                 | **Agent-Reach**                                         | **snoowrap**                                        |
+| ---------------------------- | ------------------------------ | ------------------------------------------------------- | --------------------------------------------------- |
+| Access model                 | Official API only, BYO-key     | Cookie/session import, "zero API fees"                  | Official API, BYO-key                               |
+| Platform coverage            | Reddit, YouTube                | Twitter, Reddit, YouTube, GitHub, Bilibili, XiaoHongShu | Reddit only                                         |
+| Consent/audit log            | Hash-chained, per-query, local | None                                                    | None                                                |
+| Maintenance status           | Active (this release)          | Active, 65k+ stars                                      | **Archived** since Feb 2023                         |
+| License                      | Apache 2.0                     | MIT                                                     | MIT                                                 |
+| Runtime deps (Reddit client) | 0 -- native `fetch`            | n/a (Python, browser-session based)                     | `request`, `request-promise`, `ws` (all deprecated) |
 
 Numbers measured directly against each repo's public GitHub metadata and, for the dependency comparison, against `snoowrap`'s own published `package.json` as of this writing -- reproducible by anyone with `gh api repos/<owner>/<repo>`.
 
@@ -171,7 +171,7 @@ Honest note on setup time: getting your own API credentials from Reddit and Goog
 Search a platform using its official API only.
 
 | Flag                      | Description                                                                                     |
-| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| ------------------------- | ----------------------------------------------------------------------------------------------- |
 | `--platform <platform>`   | `reddit` \| `youtube` (required)                                                                |
 | `--query <query>`         | search query (required)                                                                         |
 | `--subreddit <subreddit>` | restrict search to one subreddit (Reddit only)                                                  |
@@ -191,7 +191,7 @@ Search a platform using its official API only.
 Set up, verify, or clear BYOK credentials for a platform (stored in your OS keychain).
 
 | Flag                    | Description                                                                                        |
-| ----------------------- | --------------------------------------------------------------------------------------------------- |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
 | `--platform <platform>` | `reddit` \| `youtube` (required)                                                                   |
 | `--clear`               | delete stored credentials for this platform                                                        |
 | `--verify`              | verify stored credentials are valid without running a search (no results file, no audit-log entry) |
@@ -204,7 +204,7 @@ Set up, verify, or clear BYOK credentials for a platform (stored in your OS keyc
 Verify the local hash-chained audit log has not been tampered with.
 
 | Flag            | Description                                                                  |
-| --------------- | ----------------------------------------------------------------------------- |
+| --------------- | ---------------------------------------------------------------------------- |
 | `--path <path>` | path to the audit log file (defaults to `./auditreach.log.jsonl` if omitted) |
 
     node dist/cli.js verify-log --path ./auditreach.log.jsonl
@@ -214,7 +214,7 @@ Verify the local hash-chained audit log has not been tampered with.
 Run a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio (built on the official `@modelcontextprotocol/sdk`), exposing exactly 3 tools so an AI agent can call this CLI directly instead of shelling out and parsing stdout:
 
 | Tool          | Equivalent to                                    | Notes                                                                                  |
-| ------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| ------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | `search`      | `auditreach search --json`                       | Same parameters: platform, query, subreddit/channel, since, maxResults, before/after   |
 | `auth_status` | `auditreach auth --platform <p> --verify --json` | **Read-only.** Checks whether stored credentials are valid -- cannot set or clear them |
 | `verify_log`  | `auditreach verify-log --json`                   | Same parameters: path                                                                  |
@@ -311,7 +311,7 @@ The Python package (`auditreach-cli` on PyPI) exposes the same surface with `sna
 ## Platform coverage
 
 | Platform    | API used                                        | Status              | Known constraint                                                                                                                                                                                                                                                                                                                                                                           |
-| ----------- | ------------------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ----------- | ----------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Reddit      | Reddit API (OAuth2 password grant, direct REST) | Shipped             | Rate limits are generally workable for real research volumes                                                                                                                                                                                                                                                                                                                               |
 | YouTube     | YouTube Data API v3 (`googleapis`)              | Shipped             | Quota-based (10,000 units/day default), generally workable                                                                                                                                                                                                                                                                                                                                 |
 | X (Twitter) | X API v2                                        | **Not yet shipped** | X's official API pricing and post-volume caps have been widely reported as prohibitive for small teams doing meaningful research since the 2023 pricing changes. Deferred until a real user needs it enough to fund working around that constraint -- shipping it half-working would undercut the entire "honest about what official APIs can and can't do" premise this tool is built on. |
@@ -321,9 +321,9 @@ The Python package (`auditreach-cli` on PyPI) exposes the same surface with `sna
 `--max-results <n>` controls how many items a single `search` call returns. Leave it off and auditreach silently applies a default of 25 -- the same shape of surprise PRAW's `get_comments()` had for years ([praw#119](https://github.com/praw-dev/praw/issues/119)): a caller who does not already know to pass the flag gets a quietly truncated result set.
 
 | Platform | Default (flag omitted) | Maximum (`--max-results`) |
-| -------- | ----------------------- | --------------------------- |
-| Reddit   | 25                      | 100                          |
-| YouTube  | 25                      | 50                           |
+| -------- | ---------------------- | ------------------------- |
+| Reddit   | 25                     | 100                       |
+| YouTube  | 25                     | 50                        |
 
 Values above the cap are silently clamped to it. For Reddit, `--before`/`--after` let you page through a search's result set using the real cursor Reddit's own response returns, up to Reddit's own ~1,000-item search cap (see [Success stories](#success-stories) for why cursor pagination alone can't go further than that); YouTube has no equivalent yet. Whenever the number of items returned equals the limit that was actually applied, whether that is the silent default or an explicit `--max-results` value, auditreach prints a warning to stderr telling you more results may exist and how to raise `--max-results` (up to the platform cap).
 
