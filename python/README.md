@@ -84,7 +84,7 @@ auditreach search --platform youtube --query "your query" --channel @SomeChannel
 Real output:
 
 ```
-AuditReach v0.1 -- Official-API Research CLI
+AuditReach -- Official-API Research CLI
 Platform: Reddit  |  Auth: OAuth script-app grant, read-only, public-subreddit scope
 
 Fetching... (official API, rate-limit aware)

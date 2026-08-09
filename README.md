@@ -106,7 +106,7 @@ We started building auditreach's Reddit client on top of `snoowrap`, the most-us
 
     node dist/cli.js search --platform reddit --query "agent memory poisoning" --subreddit MachineLearning
 
-    AuditReach v0.1 -- Official-API Research CLI
+    AuditReach -- Official-API Research CLI
     Platform: Reddit  |  Auth: OAuth script-app grant, read-only, public-subreddit scope
 
     Fetching... (official API, rate-limit aware)
