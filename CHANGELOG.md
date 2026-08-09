@@ -6,6 +6,18 @@ JS/TS) and the PyPI package (`auditreach-cli`, Python) -- since they
 implement the same hash-chain algorithm and BYOK model; entries note which
 distribution they apply to.
 
+## [0.2.3] - 2026-08-08 (Python)
+
+Bug fix. `auditreach --version` reported a hardcoded `__version__ = "0.2.0"`
+in `python/src/auditreach/__init__.py` that had drifted from the real
+`pyproject.toml` version -- the installed/published package was 0.2.2, but
+`--version` (and anything reading `auditreach.__version__` programmatically)
+still reported 0.2.0. `__version__` is now read live from the installed
+package's own metadata via `importlib.metadata.version("auditreach-cli")`,
+matching how the npm CLI already derives `VERSION` from its own
+`package.json` at runtime, with a `0.0.0-dev` fallback when running from an
+uninstalled source checkout.
+
 ## [0.2.0] - 2026-07-18 (npm + Python)
 
 Both distributions add an `mcp` subcommand and a shared `.well-known/agent.json`
