@@ -2,6 +2,9 @@
 
 # auditreach
 
+<!-- mcp-name: io.github.RudrenduPaul/auditreach -->
+<!-- Ownership-proof string for registry.modelcontextprotocol.io publishing. Do not remove. -->
+
 [![CI](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml/badge.svg)](https://github.com/RudrenduPaul/auditreach/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/auditreach-cli)](https://www.npmjs.com/package/auditreach-cli)
 [![PyPI version](https://img.shields.io/pypi/v/auditreach-cli.svg)](https://pypi.org/project/auditreach-cli/)
@@ -204,6 +207,33 @@ Run a [Model Context Protocol](https://modelcontextprotocol.io) server over stdi
 
     node dist/cli.js mcp
     # or, once published: npx auditreach-cli mcp
+
+Add it to your MCP client's config (for Claude Desktop, `claude_desktop_config.json`). Either
+distribution works since both ship the same `mcp` subcommand:
+
+```json
+{
+  "mcpServers": {
+    "auditreach": {
+      "command": "npx",
+      "args": ["-y", "auditreach-cli", "mcp"]
+    }
+  }
+}
+```
+
+or, from the PyPI package:
+
+```json
+{
+  "mcpServers": {
+    "auditreach": {
+      "command": "uvx",
+      "args": ["--from", "auditreach-cli", "auditreach", "mcp"]
+    }
+  }
+}
+```
 
 Setting up or clearing BYOK credentials (`auditreach auth --platform <p>` / `--clear`) is deliberately **not** exposed over MCP -- that stays a local-CLI-only, human-driven action, so a calling agent can check whether credentials work but can never provision or wipe them itself. See [`.well-known/agent.json`](.well-known/agent.json) for the machine-readable manifest (auth requirements, tool schemas, invocation commands) that an agent or agent registry can read to discover this server without a human reading the README first.
 
