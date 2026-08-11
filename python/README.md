@@ -1,3 +1,5 @@
+<!-- mcp-name: io.github.RudrenduPaul/auditreach -->
+
 # auditreach-cli (Python)
 
 Official-API-only, BYOK CLI and library for researching Reddit and YouTube
