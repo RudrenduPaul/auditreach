@@ -30,8 +30,10 @@ vi.mock("../src/clients/youtube-client.js", () => ({
 const { runSearchCommand } = await import("../src/commands/search.js");
 
 let tmpDir: string;
+let originalCwd: string;
 
 beforeEach(async () => {
+  originalCwd = process.cwd();
   tmpDir = await mkdtemp(path.join(tmpdir(), "auditreach-search-cmd-"));
   process.chdir(tmpDir);
   getRedditCredentialsMock.mockReset();
@@ -48,6 +50,11 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  // Restore cwd before removing tmpDir: on Windows, fs.rm() cannot delete
+  // a directory that is still the process's current working directory,
+  // which left tmpDir undeleted and cwd pointed at a stale directory for
+  // the rest of the suite.
+  process.chdir(originalCwd);
   await rm(tmpDir, { recursive: true, force: true });
   process.exitCode = 0;
 });

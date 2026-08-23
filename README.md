@@ -378,10 +378,7 @@ See `CONTRIBUTING.md` for the rules on adding a new platform client -- the short
 
 ## Security
 
-See `SECURITY.md` for the vulnerability disclosure policy. A pre-launch OWASP/STRIDE review found zero CRITICAL/HIGH findings in auditreach's own code. As of this writing, `npm audit --audit-level=high` on a fresh install reports 3 advisories (1 moderate, 2 high) in `ip-address` and `hono` -- both pulled in transitively by the official `@modelcontextprotocol/sdk` dependency's HTTP-transport code. `auditreach mcp` only ever starts the SDK's stdio transport (`StdioServerTransport`), so that code path never runs, but the packages still ship in `node_modules` and still trip `npm audit` until upstream bumps its pinned versions. GitHub secret scanning and push protection are enabled on this repo.
-
-> [!NOTE]
-> If `npm audit` flags `ip-address`/`hono` on your install, that's the unused HTTP-transport code path described above, not a reachable vulnerability in how `auditreach mcp` actually runs (stdio only). It will clear once `@modelcontextprotocol/sdk` bumps its pinned versions upstream.
+See `SECURITY.md` for the vulnerability disclosure policy. A pre-launch OWASP/STRIDE review found zero CRITICAL/HIGH findings in auditreach's own code. `ip-address` and `hono` -- both pulled in transitively by the official `@modelcontextprotocol/sdk` dependency's HTTP-transport code, a path `auditreach mcp` never runs (it only ever starts the SDK's stdio transport, `StdioServerTransport`) -- previously carried advisories; `package.json`'s `overrides` field now pins both to patched versions. As of this writing, `npm audit --audit-level=high` on a fresh install reports 0 vulnerabilities. GitHub secret scanning and push protection are enabled on this repo.
 
 ## Success stories
 
