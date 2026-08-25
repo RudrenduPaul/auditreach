@@ -109,13 +109,21 @@ describe("runAuthCommand", () => {
 
   describe("--verify", () => {
     let tmpDir: string;
+    let originalCwd: string;
 
     beforeEach(async () => {
+      originalCwd = process.cwd();
       tmpDir = await mkdtemp(path.join(tmpdir(), "auditreach-auth-verify-"));
       process.chdir(tmpDir);
     });
 
     afterEach(async () => {
+      // Restore cwd before removing tmpDir: on Windows, fs.rm() cannot
+      // delete a directory that is still the process's current working
+      // directory (it fails silently or throws EBUSY/EPERM), which left
+      // tmpDir undeleted and the process cwd pointed at a stale directory
+      // for the rest of the suite.
+      process.chdir(originalCwd);
       await rm(tmpDir, { recursive: true, force: true });
     });
 

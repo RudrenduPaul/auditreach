@@ -32,6 +32,14 @@ export default [
     },
   },
   {
-    ignores: ["dist/**", "node_modules/**", "coverage/**"],
+    // python/** must stay ignored even though it isn't in a top-level
+    // .gitignore entry as such: ESLint 9's flat config does not consult
+    // .gitignore by default, so following the README's own documented
+    // Python setup (`cd python && python3 -m venv .venv`) and then running
+    // `npm run lint` from the repo root would otherwise have ESLint's
+    // untargeted js.configs.recommended block walk into the venv's bundled
+    // JS fixtures (e.g. urllib3's emscripten worker, pywin32's test
+    // scripts) and fail lint on files that aren't part of this project.
+    ignores: ["dist/**", "node_modules/**", "coverage/**", "python/**"],
   },
 ];

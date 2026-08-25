@@ -38,6 +38,7 @@ vi.mock("../src/clients/youtube-client.js", () => ({
 const { buildMcpServer } = await import("../src/commands/mcp.js");
 
 let tmpDir: string;
+let originalCwd: string;
 let client: Client;
 
 function textOf(result: CallToolResult): unknown {
@@ -49,6 +50,7 @@ function textOf(result: CallToolResult): unknown {
 }
 
 beforeEach(async () => {
+  originalCwd = process.cwd();
   tmpDir = await mkdtemp(path.join(tmpdir(), "auditreach-mcp-cmd-"));
   process.chdir(tmpDir);
   getRedditCredentialsMock.mockReset();
@@ -66,6 +68,11 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await client.close();
+  // Restore cwd before removing tmpDir: on Windows, fs.rm() cannot delete
+  // a directory that is still the process's current working directory,
+  // which left tmpDir undeleted and cwd pointed at a stale directory for
+  // the rest of the suite.
+  process.chdir(originalCwd);
   await rm(tmpDir, { recursive: true, force: true });
 });
 
