@@ -6,9 +6,23 @@ JS/TS) and the PyPI package (`auditreach-cli`, Python) -- since they
 implement the same hash-chain algorithm and BYOK model; entries note which
 distribution they apply to.
 
-## [Unreleased]
+## [0.3.0] - 2026-09-24 (npm + Python)
+
+Minor version bump on both distributions. npm moves from 0.2.3 and PyPI from 0.2.6, so both distributions are at the same version again.
+
+### Changed
 
 - The `api_key_fingerprint` audit-log field now carries a `scrypt:` prefix instead of `sha256:`, matching the scrypt-derived credential fingerprint. The audit-chain hash is unchanged (still SHA-256), so existing logs still verify.
+
+### Dependencies
+
+- npm runtime dependencies upgraded: `@napi-rs/keyring` `^1.3.0` to `^2.1.0`, `commander` `^12.1.0` to `^14.0.3`, `googleapis` `^173.0.0` to `^178.0.0`, `@modelcontextprotocol/sdk` `^1.29.0` to `^1.30.1`, `zod` `^4.4.3` to `^4.6.5`. The minimum supported Node.js version is unchanged (`>=20`).
+- Python: the `mcp` range is widened from `>=1.0,<2` to `>=1.0,<3`, with an import shim that uses `MCPServer` on `mcp` 2.x and falls back to `FastMCP` on 1.x. The minimum supported Python version is unchanged (`>=3.10`).
+- Development dependencies refreshed (eslint, vitest, TypeScript, and the Python dev extras).
+
+### Publishing
+
+- npm releases are now published through npm Trusted Publishing (GitHub Actions OIDC, no stored token) from `.github/workflows/publish-npm.yml`, with provenance attached automatically.
 
 ## [0.2.3] - 2026-08-08 (Python)
 

@@ -6,12 +6,12 @@
     "url": "https://github.com/RudrenduPaul/auditreach",
     "source": "github"
   },
-  "version": "0.2.5",
+  "version": "0.3.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "auditreach-cli",
-      "version": "0.2.5",
+      "version": "0.3.0",
       "runtimeHint": "uvx",
       "runtimeArguments": [
         {
