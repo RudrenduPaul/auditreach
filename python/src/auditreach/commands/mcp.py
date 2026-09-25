@@ -143,7 +143,10 @@ def build_mcp_server() -> "Any":
     # Imported lazily (not at module top) so that `import auditreach` and
     # the other 3 subcommands never pay the mcp SDK's import cost (it pulls
     # in anyio, pydantic, etc.) -- only `auditreach mcp` itself does.
-    from mcp.server.fastmcp import FastMCP
+    try:
+        from mcp.server.mcpserver import MCPServer as FastMCP  # mcp 2.x
+    except ImportError:
+        from mcp.server.fastmcp import FastMCP  # mcp 1.x
 
     server = FastMCP(
         name="auditreach",

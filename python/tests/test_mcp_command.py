@@ -198,7 +198,8 @@ class TestBuildMcpServer:
         server = mcp_cmd.build_mcp_server()
         tools = asyncio.run(server.list_tools())
         for tool in tools:
-            properties = tool.inputSchema.get("properties", {})
+            schema = getattr(tool, "input_schema", None) or tool.inputSchema
+            properties = schema.get("properties", {})
             assert "clear" not in properties
             assert "client_secret" not in properties
             assert "password" not in properties
