@@ -20,7 +20,7 @@ a language-idiomatic API surface):
   },
   "auth_scope": "OAuth script-app grant, read-only, public-subreddit scope",
   "consent_basis": "Reddit API Terms -- public content, official API, read-only script-app credentials",
-  "api_key_fingerprint": "sha256:a1b2c3",
+  "api_key_fingerprint": "scrypt:a1b2c3",
   "results_returned": 14,
   "prev_entry_hash": null,
   "entry_hash": "..."
@@ -61,7 +61,7 @@ distributions implement this identically; the Python port's
 entry, a broken chain link, and a deleted middle entry.
 
 `credentialFingerprint`/`credential_fingerprint` is the last 6 hex
-characters of the SHA-256 hash of the credential actually used for a given
+characters of the scrypt-derived hash of the credential actually used for a given
 query (the Reddit client secret, or the YouTube API key) -- enough to tell
 "this entry used a different credential than that entry" apart, e.g. after
 rotating a key, without the fingerprint itself being reversible back to the

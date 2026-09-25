@@ -276,7 +276,7 @@ describe("MCP server", () => {
         query_params: { query: "test" },
         auth_scope: "OAuth script-app grant, read-only, public-subreddit scope",
         consent_basis: "Reddit API Terms -- public content, official API",
-        api_key_fingerprint: "sha256:abc123",
+        api_key_fingerprint: "scrypt:abc123",
         results_returned: 5,
         prev_entry_hash: null,
       };

@@ -6,6 +6,10 @@ JS/TS) and the PyPI package (`auditreach-cli`, Python) -- since they
 implement the same hash-chain algorithm and BYOK model; entries note which
 distribution they apply to.
 
+## [Unreleased]
+
+- The `api_key_fingerprint` audit-log field now carries a `scrypt:` prefix instead of `sha256:`, matching the scrypt-derived credential fingerprint. The audit-chain hash is unchanged (still SHA-256), so existing logs still verify.
+
 ## [0.2.3] - 2026-08-08 (Python)
 
 Bug fix. `auditreach --version` reported a hardcoded `__version__ = "0.2.0"`

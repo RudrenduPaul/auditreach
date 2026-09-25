@@ -251,7 +251,7 @@ for why. `auditreach-cli`'s runtime dependencies are
 
 See [SECURITY.md](https://github.com/RudrenduPaul/auditreach/blob/main/SECURITY.md)
 for the vulnerability disclosure policy. Credentials are never logged,
-printed, or written to the audit log -- only a 6-character SHA-256
+printed, or written to the audit log -- only a 6-character scrypt-derived
 fingerprint of the credential used for a given query appears there. No
 `eval`/`exec` of anything read from user input or an API response, no
 shell/subprocess calls, and no third-party HTTP library in the request

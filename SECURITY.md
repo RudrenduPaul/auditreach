@@ -20,7 +20,7 @@ line to backport to yet.
 `auditreach` handles two categories of sensitive material, in both distributions:
 
 1. **BYOK credentials** (Reddit client secret/username/password, YouTube API key). The npm package stores these only in the local OS keychain via `@napi-rs/keyring`. The Python package stores them in the local OS keychain via the `keyring` package by default, and additionally checks a platform-specific environment variable first (`AUDITREACH_REDDIT_CLIENT_ID`, `AUDITREACH_REDDIT_CLIENT_SECRET`, `AUDITREACH_REDDIT_USERNAME`, `AUDITREACH_REDDIT_PASSWORD`, `AUDITREACH_YOUTUBE_API_KEY`) -- see `docs/concepts.md`. Neither distribution transmits a credential anywhere except the platform's own official OAuth/API endpoint.
-2. **The local audit log** (`auditreach.log.jsonl`) -- contains query metadata and a credential _fingerprint_ (last 6 hex characters of a SHA-256 hash), never a full credential, in either distribution.
+2. **The local audit log** (`auditreach.log.jsonl`) -- contains query metadata and a credential _fingerprint_ (last 6 hex characters of a scrypt-derived hash), never a full credential, in either distribution.
 
 A vulnerability that could leak a credential, forge an audit-log entry, or bypass the hash-chain tamper check is a **security issue** under this policy, not a regular bug, regardless of which distribution it's found in.
 

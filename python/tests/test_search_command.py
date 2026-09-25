@@ -89,8 +89,8 @@ def test_never_writes_the_raw_client_secret_into_the_audit_log(monkeypatch, tmp_
     log_content = (tmp_path / "auditreach.log.jsonl").read_text()
     assert secret not in log_content
     entry = json.loads(log_content.strip())
-    assert entry["api_key_fingerprint"].startswith("sha256:")
-    assert len(entry["api_key_fingerprint"]) == len("sha256:") + 6
+    assert entry["api_key_fingerprint"].startswith("scrypt:")
+    assert len(entry["api_key_fingerprint"]) == len("scrypt:") + 6
 
 
 def test_chains_prev_entry_hash_across_multiple_searches(monkeypatch, tmp_path):

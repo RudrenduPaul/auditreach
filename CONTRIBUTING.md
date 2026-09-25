@@ -80,7 +80,7 @@ Changes to the `AuditLogEntry` schema (`src/types.ts` / `python/src/auditreach/t
 ## Credential handling (non-negotiable)
 
 - Never log, print, or serialize a full API key, client secret, or password anywhere -- not to the audit log, not to stdout, not to an error message, in either distribution.
-- The only representation of a credential that may appear in output is its `credentialFingerprint`/`credential_fingerprint` (last 6 hex characters of its SHA-256 hash) -- see `src/util/crypto.ts` / `python/src/auditreach/crypto.py`.
+- The only representation of a credential that may appear in output is its `credentialFingerprint`/`credential_fingerprint` (last 6 hex characters of its scrypt-derived hash) -- see `src/util/crypto.ts` / `python/src/auditreach/crypto.py`.
 - If you're touching `src/auth/` or `src/commands/auth.ts` (or their Python equivalents `python/src/auditreach/auth/` and `python/src/auditreach/commands/auth.py`), add a test proving no secret leaks into a log, file, or console call.
 - The Python package's env-var credential path (`AUDITREACH_REDDIT_*`, `AUDITREACH_YOUTUBE_API_KEY`) is documented, opt-in, and never silently substitutes for an unset keychain value with anything other than what the caller explicitly set -- keep it that way if you touch `python/src/auditreach/auth/credential_store.py`.
 

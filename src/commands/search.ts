@@ -96,7 +96,7 @@ export async function executeSearch(
     query_params: outcome.queryParams,
     auth_scope: outcome.authScope,
     consent_basis: outcome.consentBasis,
-    api_key_fingerprint: `sha256:${credentialFingerprint(fingerprintSource)}`,
+    api_key_fingerprint: `scrypt:${credentialFingerprint(fingerprintSource)}`,
     results_returned: outcome.items.length,
     prev_entry_hash: prevHash,
   });

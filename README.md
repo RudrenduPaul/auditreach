@@ -308,7 +308,7 @@ if (!result.valid) {
 
 - `canonicalJson(value: unknown): string` -- recursively sorts object keys so the same logical entry always serializes to the same bytes, which the hash chain depends on to verify deterministically.
 - `sha256Hex(input: string): string`
-- `credentialFingerprint(secret: string): string` -- keeps only the last 6 hex characters of the hash, enough to distinguish rotated keys in a local audit log, never enough to be a partial credential leak.
+- `credentialFingerprint(secret: string): string` -- keeps only the last 6 hex characters of a scrypt-derived hash (emitted in the audit log as `scrypt:<6 hex>`), enough to distinguish rotated keys in a local audit log, never enough to be a partial credential leak.
 
 **Command cores and MCP**
 

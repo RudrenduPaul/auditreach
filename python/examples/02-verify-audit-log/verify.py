@@ -30,7 +30,7 @@ def make_entry(prev_hash, query):
         "query_params": {"query": query},
         "auth_scope": "OAuth script-app grant, read-only, public-subreddit scope",
         "consent_basis": "Reddit API Terms -- public content, official API",
-        "api_key_fingerprint": "sha256:abc123",
+        "api_key_fingerprint": "scrypt:abc123",
         "results_returned": 3,
         "prev_entry_hash": prev_hash,
     }

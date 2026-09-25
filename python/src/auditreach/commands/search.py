@@ -100,7 +100,7 @@ def run_search_command(
             "query_params": outcome.query_params,
             "auth_scope": outcome.auth_scope,
             "consent_basis": outcome.consent_basis,
-            "api_key_fingerprint": f"sha256:{credential_fingerprint(fingerprint_source)}",
+            "api_key_fingerprint": f"scrypt:{credential_fingerprint(fingerprint_source)}",
             "results_returned": len(outcome.items),
             "prev_entry_hash": prev_hash,
         }

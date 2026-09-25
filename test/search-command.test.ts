@@ -136,7 +136,7 @@ describe("runSearchCommand", () => {
     const logContent = await readFile(path.join(tmpDir, "auditreach.log.jsonl"), "utf8");
     expect(logContent).not.toContain(secret);
     const entry = JSON.parse(logContent.trim());
-    expect(entry.api_key_fingerprint).toMatch(/^sha256:[0-9a-f]{6}$/);
+    expect(entry.api_key_fingerprint).toMatch(/^scrypt:[0-9a-f]{6}$/);
   });
 
   it("chains prev_entry_hash across multiple searches", async () => {
