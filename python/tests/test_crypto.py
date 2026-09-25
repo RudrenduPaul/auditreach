@@ -41,6 +41,10 @@ def test_credential_fingerprint_differs_for_different_inputs():
     assert credential_fingerprint("key-a") != credential_fingerprint("key-b")
 
 
+def test_credential_fingerprint_matches_scrypt_known_vector_shared_with_typescript():
+    assert credential_fingerprint("key-a") == "86cd1c"
+
+
 def test_generate_entry_id_produces_unique_ids_across_calls():
     ids = {generate_entry_id() for _ in range(50)}
     assert len(ids) == 50

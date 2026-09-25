@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, scryptSync } from "node:crypto";
 
 /**
  * Canonical JSON: sorts object keys recursively so the same logical entry
@@ -32,9 +32,17 @@ export function sha256Hex(input: string): string {
  * or logging the credential itself. Only the last 6 hex characters of the
  * hash are kept -- enough to distinguish rotated keys in a local audit log,
  * not enough to be a partial credential leak.
+ *
+ * Derived with scrypt (a computationally expensive KDF) under a fixed
+ * application salt so the value stays deterministic for a given credential
+ * while resisting brute-force recovery. The Python port uses identical
+ * parameters, so both implementations emit the same fingerprint.
  */
+const FINGERPRINT_SALT = "auditreach:credential-fingerprint:v1";
+
 export function credentialFingerprint(secret: string): string {
-  return sha256Hex(secret).slice(-6);
+  const derived = scryptSync(secret, FINGERPRINT_SALT, 32, { N: 16384, r: 8, p: 1 });
+  return derived.toString("hex").slice(-6);
 }
 
 export function generateEntryId(prefix = "ar"): string {

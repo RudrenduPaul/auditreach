@@ -14,6 +14,9 @@ from datetime import datetime, timezone
 from typing import Any
 
 
+_FINGERPRINT_SALT = b"auditreach:credential-fingerprint:v1"
+
+
 def _sort_keys_deep(value: Any) -> Any:
     """
     Recursively sorts dict keys so the same logical value always produces
@@ -52,8 +55,20 @@ def credential_fingerprint(secret: str) -> str:
     or logging the credential itself. Only the last 6 hex characters of the
     hash are kept -- enough to distinguish rotated keys in a local audit log,
     not enough to be a partial credential leak.
+
+    Derived with scrypt (a computationally expensive KDF) under a fixed
+    application salt so the value stays deterministic for a given credential
+    while resisting brute-force recovery. Parameters match src/util/crypto.ts.
     """
-    return sha256_hex(secret)[-6:]
+    derived = hashlib.scrypt(
+        secret.encode("utf-8"),
+        salt=_FINGERPRINT_SALT,
+        n=16384,
+        r=8,
+        p=1,
+        dklen=32,
+    )
+    return derived.hex()[-6:]
 
 
 def generate_entry_id(prefix: str = "ar") -> str:

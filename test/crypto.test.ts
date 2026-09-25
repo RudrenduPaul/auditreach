@@ -49,6 +49,10 @@ describe("credentialFingerprint", () => {
   it("differs for different inputs", () => {
     expect(credentialFingerprint("key-a")).not.toBe(credentialFingerprint("key-b"));
   });
+
+  it("matches the scrypt known vector shared with the Python port", () => {
+    expect(credentialFingerprint("key-a")).toBe("86cd1c");
+  });
 });
 
 describe("generateEntryId", () => {
